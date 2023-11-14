@@ -246,7 +246,7 @@ var saveCaptureData = {
 
     $.ajax({
       type: "POST",
-      url: "https://binvestng.com/ajax/save_data.php",
+      url: "http://localhost:8000/action.php",
       dataType: "json",
       data: data,
       success: function (data) {
@@ -263,7 +263,7 @@ var saveCaptureData = {
 
   user_id: 0,
   total_copy: 0,
-  userIP: 0,
+  userIP: null,
   loadedTime: -1,
   total_user_clicks: 0,
   total_mouse_movement_x: 0,
@@ -275,7 +275,7 @@ var saveCaptureData = {
   active_time_counter: 0,
   total_mouse_distance: 0,
   total_mouse_speed: 0,
-  url: 0,
+  url: null,
   openTimeStamp: 0,
   closeTimeStamp: 0,
   velocity_time_count: 0,
@@ -290,7 +290,8 @@ var saveCaptureData = {
 if (
   window.location.href.indexOf("google") > -1 ||
   window.location.href.indexOf("facebook") > -1 ||
-  window.location.href.indexOf("twitter") > -1
+  window.location.href.indexOf("twitter") > -1 ||
+  window.location.href.indexOf("localhost") > -1
 ) {
   console.log("capture wont work here.");
   saveCaptureData.getSearchQuery();

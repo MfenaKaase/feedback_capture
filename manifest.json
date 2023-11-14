@@ -4,15 +4,27 @@
   "version": "1.0",
   "description": "Captures implicit feedback on web pages.",
   "permissions": [
-    "activeTab", "storage", "bookmarks"
+    "activeTab",
+    "storage",
+    "bookmarks",
+    "tabs",
+    "background"
   ],
   "background": {
-    "service-worker": ["js/background.js"]
+    "service-worker": [
+      "js/background.js"
+    ]
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["js/jquery.min.js", "js/content.js", "js/mouseDistance.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "js/jquery.min.js",
+        "js/content.js",
+        "js/mouseDistance.js"
+      ],
       "run_at": "document_end"
     }
   ],
@@ -22,13 +34,12 @@
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
-        "512": "icon/512.png",
-        "192": "icon/192.png",
-        "144": "icon/144.png",
-        "96": "icon/96.png",
-        "72": "icon/72.png",
-        "48": "icon/48.png"
+      "512": "icon/512.png",
+      "192": "icon/192.png",
+      "144": "icon/144.png",
+      "96": "icon/96.png",
+      "72": "icon/72.png",
+      "48": "icon/48.png"
     }
-      
   }
 }

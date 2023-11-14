@@ -11,11 +11,12 @@ function bookmarkListener() {
 function getIP() {
   if (window.XMLHttpRequest) xmlhttp = new XMLHttpRequest();
   else xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-
+ 
   xmlhttp.open("GET", "https://api.hostip.info/get_html.php", false);
   xmlhttp.send();
 
   hostipInfo = xmlhttp.responseText.split("\n");
+  console.log(hostipInfo);
 
   for (i = 0; hostipInfo.length >= i; i++) {
     ipAddress = hostipInfo[i].split(":");
@@ -25,5 +26,6 @@ function getIP() {
   }
   return false;
 }
+
 
 bookmarkListener();
