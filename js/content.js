@@ -19,8 +19,8 @@ var saveCaptureData = {
   timeIntervalID: "",
   init: function () {
     this.loadedTime = Date.now();
-    this.newt = new Date();
-    this.openTimeStamp = this.newt.toUTCString();
+    this.newTime = new Date();
+    this.openTimeStamp = Math.floor(this.newTime.getTime() / 1000);
     console.log("The time loading is: " + this.openTimeStamp);
     this.setCloseEvent();
     //start counter on page load
@@ -33,12 +33,14 @@ var saveCaptureData = {
     this.pageSelectionEvent();
     this.userPrintEvents();
     this.pageSaveEvent();
+    this.getIP();
+    this.getUserID();
 
     //Get IP address
-    chrome.runtime.sendMessage({ instruction: "IP" }, function (response) {
-      console.log("IP address retrieved: " + response.IP);
-      saveCaptureData.userIP = response.IP;
-    });
+    // chrome.runtime.onMessage({ instruction: "IP" }, function (response) {
+    //   console.log("IP address retrieved: " + response.IP);
+    //   saveCaptureData.userIP = response.IP;
+    // });
 
     //Retrieve search query from storage
     chrome.storage.sync.get(["searchQuery"], function (result) {
@@ -46,22 +48,29 @@ var saveCaptureData = {
       console.log(
         "Search quey that brought up this page: " + saveCaptureData.search_query
       );
-      chrome.storage.sync.set({ searchQuery: null }, function () {});
+      chrome.storage.sync.set({ searchQuery: null }, function () { });
     });
 
-    //Listen for bookmark events from background script.
+    //Listen for bookmark and getIP events from background script.
     chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-      if (request.bookmark == 1){
-        saveCaptureData.bookmarked += request.bookmark;
-        console.log("Page bookmarked.");
-        sendResponse({ farewell: "goodbye" });
-      } 
+      if (request.type === 'bookmark') {
+        if (request.bookmark == 1) {
+          saveCaptureData.bookmarked += request.bookmark;
+          console.log("Page bookmarked.");
+        }
+      } else {
+        if (request.bookmark == 1) {
+          saveCaptureData.userIP = request.IP;
+          console.log("IP address recorded!");
+        }
+      }
+      sendResponse({ farewell: "goodbye" });
     });
   },
 
-  getSearchQuery: function() {
+  getSearchQuery: function () {
     lastUrl = window.location.href;
-    console.log("URL: "+ lastUrl);
+    console.log("URL: " + lastUrl);
     query = String(getUrlVars(lastUrl).q);
     r = query.split('+').join(' ');
 
@@ -70,20 +79,20 @@ var saveCaptureData = {
     });
   },
 
-  userPrintEvents: function() {
-    window.addEventListener("afterprint", function(event) { 
+  userPrintEvents: function () {
+    window.addEventListener("afterprint", function (event) {
       ++saveCaptureData.printed_document;
       console.log("This document just got printed. " + saveCaptureData.printed_document);
     });
   },
 
-  pageSaveEvent: function() {
+  pageSaveEvent: function () {
     document.addEventListener("keydown", function (event) {
       console.log("Got here.");
-      if (event.ctrlKey && event.key == "s" ) {
+      if (event.ctrlKey && event.key == "s") {
         ++saveCaptureData.page_saved;
         console.log('Page saved, record taken.');
-      } 
+      }
     });
   },
 
@@ -100,27 +109,22 @@ var saveCaptureData = {
     //Window close listener
     window.addEventListener("beforeunload", function (e) {
       // If you prevent default behavior in Mozilla Firefox prompt will always be shown
-      //e.preventDefault();
+      // e.preventDefault();
       // Chrome requires returnValue to be set
 
       var dt = Date.now();
       var d = new Date();
-      saveCaptureData.closeTimeStamp = d.toUTCString();
+      saveCaptureData.closeTimeStamp = Math.floor(d.getTime() / 1000);
       console.log("The time at closing is: " + saveCaptureData.closeTimeStamp);
 
       /**if ((saveCaptureData.loadedTime > 0 || dt >= 1000) && saveCaptureData.search_query) {
         // save here as null (don't have to save because it's default)
         
       }**/
-      saveCaptureData.checkBeforeClose();
-      e.returnValue = "";
+      saveCaptureData.user_rating = 1;
+      saveCaptureData.save();
+      // e.returnValue = "";
     });
-  },
-
-  checkBeforeClose: function () {
-    saveCaptureData.user_rating = 1;
-    saveCaptureData.save();
-    return false;
   },
 
   monitorKeyPress: function () {
@@ -216,6 +220,52 @@ var saveCaptureData = {
     }, 1000);
   },
 
+  getIP: async function () {
+    try {
+      const response = await fetch("https://api.hostip.info/get_html.php");
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const responseData = await response.text();
+      const hostipInfo = responseData.split("\n");
+
+      console.log(hostipInfo);
+
+      for (let i = 0; i < hostipInfo.length; i++) {
+        const ipAddress = hostipInfo[i].split(":");
+        if (ipAddress[0] === "IP") {
+          let IP = ipAddress[1].trim();
+          saveCaptureData.userIP = IP;
+          return IP;
+        }
+      }
+
+      return false;
+    } catch (error) {
+      console.error("Error fetching IP:", error);
+      return false;
+    }
+  },
+
+  getUserID: function() {
+    chrome.storage.local.get(["implicit_feedback_ID"]).then((result) => {
+      console.log(result.implicit_feedback_ID);
+      if(!result.implicit_feedback_ID) {
+        let userID = randomString();
+        chrome.storage.local.set({ implicit_feedback_ID: userID }).then(() => {
+          console.log("Value is set");
+          saveCaptureData.userID = userID;
+        });
+      } else {
+        console.log("Value currently is " + result.implicit_feedback_ID);
+        saveCaptureData.userID = result.implicit_feedback_ID;
+      }
+      
+    });
+  },
+
   //Save captured data
   save: function () {
     console.log('data saving function was called.');
@@ -240,7 +290,8 @@ var saveCaptureData = {
       bookmarked: this.bookmarked,
       printed_document: this.printed_document,
       page_saved: this.page_saved,
-      search_query: this.search_query
+      search_query: this.search_query,
+      user_ID: this.userID
     };
     console.log(data);
 
@@ -252,7 +303,7 @@ var saveCaptureData = {
       success: function (data) {
         if (data.success == true) {
           console.log("Captured user activity saved.");
-        } 
+        }
       },
       error: function (xhr, status, error) {
         var errorMessage = xhr.status + ": " + xhr.statusText;
@@ -285,6 +336,7 @@ var saveCaptureData = {
   printed_document: 0,
   page_saved: 0,
   search_query: null,
+  userID: null
 };
 
 if (
@@ -298,3 +350,20 @@ if (
 } else {
   saveCaptureData.init();
 }
+
+function randomString() {
+  //initialize a variable having alpha-numeric characters  
+  var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
+
+  //specify the length for the new string to be generated  
+  var string_length = 8;
+  var randomstring = '';
+
+  //put a loop to select a character randomly in each iteration  
+  for (var i = 0; i < string_length; i++) {
+    var rnum = Math.floor(Math.random() * chars.length);
+    randomstring += chars.substring(rnum, rnum + 1);
+  }
+  //display the generated string   
+  return randomstring;
+}  

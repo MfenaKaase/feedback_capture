@@ -7,13 +7,10 @@
     "activeTab",
     "storage",
     "bookmarks",
-    "tabs",
-    "background"
+    "tabs"
   ],
   "background": {
-    "service-worker": [
-      "js/background.js"
-    ]
+    "service_worker": "js/background.js"
   },
   "content_scripts": [
     {
