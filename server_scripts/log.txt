@@ -130,3 +130,30 @@ Data saved successfully
 Close Time Stamp 2023-11-15 10:21:00 
  Open Time Stamp: 2023-11-15 10:20:57 
 Data saved successfully
+Close Time Stamp 2023-11-26 16:36:51 
+ Open Time Stamp: 2023-11-26 16:34:32 
+Data saved successfully
+Close Time Stamp 2023-11-26 16:49:17 
+ Open Time Stamp: 2023-11-26 16:39:45 
+Data saved successfully
+Close Time Stamp 2023-11-26 16:49:16 
+ Open Time Stamp: 2023-11-26 16:39:45 
+Data saved successfully
+Close Time Stamp 2023-11-30 23:22:45 
+ Open Time Stamp: 2023-11-30 23:22:34 
+Data saved successfully
+Close Time Stamp 2023-12-01 00:09:42 
+ Open Time Stamp: 2023-12-01 00:09:32 
+Data saved successfully
+Close Time Stamp 2023-12-01 00:15:10 
+ Open Time Stamp: 2023-12-01 00:14:29 
+Data saved successfully
+Close Time Stamp 2023-12-01 00:19:16 
+ Open Time Stamp: 2023-12-01 00:18:37 
+Data saved successfully
+Close Time Stamp 2023-12-01 00:22:55 
+ Open Time Stamp: 2023-12-01 00:22:36 
+Data saved successfully
+Close Time Stamp 2023-12-03 20:37:10 
+ Open Time Stamp: 2023-12-03 20:36:53 
+Data saved successfully

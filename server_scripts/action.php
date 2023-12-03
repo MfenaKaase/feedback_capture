@@ -2,7 +2,7 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-$servername = "localhost:3306";
+$servername = "localhost:3307";
 $username = "root";
 $password = "";
 $dbname = "implicit_feedback_db";  // Replace with your actual database name
@@ -39,20 +39,35 @@ if ($_POST) {
     $printed_document = $_POST['printed_document'];
     $page_saved = $_POST['page_saved'];
     $search_query = $_POST['search_query'];
+    $page_title = $_POST['pageTitle'];
+    $leading_paragraph = $_POST['leadingParagraph'];
+
+    // Sample data
+    $dataToPost = array(
+        "leading_paragraph" => $leading_paragraph,
+        "page_title" => $page_title,
+        "search_query" => $search_query,
+        "total_active_time" => $total_active_time,
+        "total_copy" => $total_copy,
+        "url" => $url,
+        "userID" => $userID
+    );
 
 
 
     // SQL statement
-    $sql = "INSERT INTO feedback (total_user_clicks, total_mouse_movement_x, total_mouse_movement_y, total_user_scroll, user_rating, total_key_strokes, total_active_time, total_mouse_distance, total_mouse_speed, url, userID, total_copy, openTimeStamp, closeTimeStamp, velocity_time_count, average_mouse_speed, total_text_selections, bookmarked, printed_document, page_saved, search_query) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO feedback (total_user_clicks, total_mouse_movement_x, total_mouse_movement_y, total_user_scroll, user_rating, total_key_strokes, total_active_time, total_mouse_distance, total_mouse_speed, url, userID, total_copy, openTimeStamp, closeTimeStamp, velocity_time_count, average_mouse_speed, total_text_selections, bookmarked, printed_document, page_saved, search_query, page_title, leading_paragraph) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     // Prepare and bind the statement
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("iiiiiiiiississiiiiiis", $total_user_clicks, $total_mouse_movement_x, $total_mouse_movement_y, $total_user_scroll, $user_rating, $total_key_strokes, $total_active_time, $total_mouse_distance, $total_mouse_speed, $url, $userID, $total_copy, $openTimestamp, $closeTimestamp, $velocity_time_count, $average_mouse_speed, $total_text_selections, $bookmarked, $printed_document, $page_saved, $search_query);
+    $stmt->bind_param("iiiiiiiiississiiiiiisss", $total_user_clicks, $total_mouse_movement_x, $total_mouse_movement_y, $total_user_scroll, $user_rating, $total_key_strokes, $total_active_time, $total_mouse_distance, $total_mouse_speed, $url, $userID, $total_copy, $openTimestamp, $closeTimestamp, $velocity_time_count, $average_mouse_speed, $total_text_selections, $bookmarked, $printed_document, $page_saved, $search_query, $page_title, $leading_paragraph);
 
     // Execute the statement
     if ($stmt->execute()) {
         $response = array("success" => true);
         file_put_contents('log.txt', "Data saved successfully\n", FILE_APPEND);
+
+        postDataToSolr($dataToPost);
     } else {
         $response = array("success" => false, "error" => $stmt->error);
         file_put_contents('log.txt', "Error: " . $e->getMessage() . "\n", FILE_APPEND);
@@ -67,8 +82,38 @@ if ($_POST) {
     echo json_encode($response);
 }
 
+function postDataToSolr($postData) {
+
+    // Solr update URL
+    $solrUpdateUrl = 'http://localhost:8983/solr/feedback/update?commit=true';
+
+    // Initialize cURL session
+    $ch = curl_init();
+
+    // Set cURL options
+    curl_setopt($ch, CURLOPT_URL, $solrUpdateUrl);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(array($postData)));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    // Execute cURL session and get the response
+    $response = curl_exec($ch);
+
+    // Check for cURL errors
+    if (curl_errno($ch)) {
+        echo 'Curl error: ' . curl_error($ch);
+    }
+
+    // Close cURL session
+    curl_close($ch);
+
+    // Display the Solr response
+    echo $response;
+}
 
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 
