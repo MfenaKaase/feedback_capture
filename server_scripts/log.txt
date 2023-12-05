@@ -157,3 +157,9 @@ Data saved successfully
 Close Time Stamp 2023-12-03 20:37:10 
  Open Time Stamp: 2023-12-03 20:36:53 
 Data saved successfully
+Close Time Stamp 2023-12-04 12:12:44 
+ Open Time Stamp: 2023-12-04 12:12:41 
+Data saved successfully
+Close Time Stamp 2023-12-04 12:18:23 
+ Open Time Stamp: 2023-12-04 12:16:23 
+Data saved successfully
