@@ -35,8 +35,6 @@ var saveCaptureData = {
     this.pageSaveEvent();
     this.getIP();
     this.getUserID();
-    this.getPageTitle();
-    this.getLeadingParagraph();
 
     //Get IP address
     // chrome.runtime.onMessage({ instruction: "IP" }, function (response) {
@@ -50,7 +48,7 @@ var saveCaptureData = {
       console.log(
         "Search quey that brought up this page: " + saveCaptureData.search_query
       );
-      chrome.storage.sync.set({ searchQuery: '' }, function () { });
+      chrome.storage.sync.set({ searchQuery: null }, function () { });
     });
 
     //Listen for bookmark and getIP events from background script.
@@ -251,10 +249,10 @@ var saveCaptureData = {
     }
   },
 
-  getUserID: function () {
+  getUserID: function() {
     chrome.storage.local.get(["implicit_feedback_ID"]).then((result) => {
       console.log(result.implicit_feedback_ID);
-      if (!result.implicit_feedback_ID) {
+      if(!result.implicit_feedback_ID) {
         let userID = randomString();
         chrome.storage.local.set({ implicit_feedback_ID: userID }).then(() => {
           console.log("Value is set");
@@ -264,24 +262,8 @@ var saveCaptureData = {
         console.log("Value currently is " + result.implicit_feedback_ID);
         saveCaptureData.userID = result.implicit_feedback_ID;
       }
-
+      
     });
-  },
-
-  getPageTitle: function () {
-    saveCaptureData.pageTitle = document.title;
-  },
-
-  getLeadingParagraph: async function () {
-    let paragraphs = document.querySelectorAll('body p');
-    let meaningfulParagraph = await findMeaningfulParagraph(paragraphs);
-
-    if (meaningfulParagraph) {
-      saveCaptureData.leadingParagraph = meaningfulParagraph;
-    } else {
-      console.log("No meaningful paragraph found.");
-    }
-    
   },
 
   //Save captured data
@@ -309,9 +291,7 @@ var saveCaptureData = {
       printed_document: this.printed_document,
       page_saved: this.page_saved,
       search_query: this.search_query,
-      user_ID: this.userID,
-      pageTitle: this.pageTitle,
-      leadingParagraph: this.leadingParagraph
+      user_ID: this.userID
     };
     console.log(data);
 
@@ -334,7 +314,7 @@ var saveCaptureData = {
 
   user_id: 0,
   total_copy: 0,
-  userIP: '',
+  userIP: null,
   loadedTime: -1,
   total_user_clicks: 0,
   total_mouse_movement_x: 0,
@@ -346,7 +326,7 @@ var saveCaptureData = {
   active_time_counter: 0,
   total_mouse_distance: 0,
   total_mouse_speed: 0,
-  url: '',
+  url: null,
   openTimeStamp: 0,
   closeTimeStamp: 0,
   velocity_time_count: 0,
@@ -355,10 +335,8 @@ var saveCaptureData = {
   bookmarked: 0,
   printed_document: 0,
   page_saved: 0,
-  search_query: '',
-  userID: '',
-  pageTitle: '',
-  leadingParagraph: ''
+  search_query: null,
+  userID: null
 };
 
 if (
@@ -388,17 +366,4 @@ function randomString() {
   }
   //display the generated string   
   return randomstring;
-}
-
-async function findMeaningfulParagraph(paragraphs) {
-  for (var i = 0; i < paragraphs.length; i++) {
-    var trimmedText = paragraphs[i].textContent.trim();
-    if (trimmedText.length >= 50) {
-      return trimmedText;
-    }
-  }
-  // Return null if no meaningful paragraph is found
-  return null;
-}
-
-
+}  
