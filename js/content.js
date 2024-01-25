@@ -38,12 +38,6 @@ var saveCaptureData = {
     this.getPageTitle();
     this.getLeadingParagraph();
 
-    //Get IP address
-    // chrome.runtime.onMessage({ instruction: "IP" }, function (response) {
-    //   console.log("IP address retrieved: " + response.IP);
-    //   saveCaptureData.userIP = response.IP;
-    // });
-
     //Retrieve search query from storage
     chrome.storage.sync.get(["searchQuery"], function (result) {
       saveCaptureData.search_query = result.searchQuery;
@@ -75,6 +69,15 @@ var saveCaptureData = {
     console.log("URL: " + lastUrl);
     query = String(getUrlVars(lastUrl).q);
     r = query.split('+').join(' ');
+
+    fetch(`https://34.162.237.151/solr/feedback/select?indent=true&q.op=OR&q=${r}&useParams=`)
+    .then(response => response.json())
+    .then(data => {
+      console.log(data)
+    })
+    .catch(err => {
+      console.log(err)
+    })
 
     chrome.storage.sync.set({ 'searchQuery': r }, function () {
       console.log("Value is set to " + r);
@@ -125,7 +128,7 @@ var saveCaptureData = {
       }**/
       saveCaptureData.user_rating = 1;
       saveCaptureData.save();
-      // e.returnValue = "";
+      e.returnValue = "";
     });
   },
 
@@ -317,6 +320,7 @@ var saveCaptureData = {
 
     $.ajax({
       type: "POST",
+      // url: "https://grayfinancial.site/action.php",
       url: "http://localhost:8000/action.php",
       dataType: "json",
       data: data,
@@ -393,7 +397,7 @@ function randomString() {
 async function findMeaningfulParagraph(paragraphs) {
   for (var i = 0; i < paragraphs.length; i++) {
     var trimmedText = paragraphs[i].textContent.trim();
-    if (trimmedText.length >= 50) {
+    if (trimmedText.length >= 200) {
       return trimmedText;
     }
   }
@@ -402,3 +406,6 @@ async function findMeaningfulParagraph(paragraphs) {
 }
 
 
+// curl --user solr:YOUR_ADMIN_PASSWORD -X POST -H 'Content-type: application/json' --data-binary '{
+//   "set-user": {"newuser": "newpassword"}
+// }' http://localhost:8983/solr/admin/authentication

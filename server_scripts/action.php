@@ -2,7 +2,7 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-$servername = "localhost:3307";
+$servername = "localhost:3306";
 $username = "root";
 $password = "";
 $dbname = "implicit_feedback_db";  // Replace with your actual database name
@@ -70,7 +70,7 @@ if ($_POST) {
         postDataToSolr($dataToPost);
     } else {
         $response = array("success" => false, "error" => $stmt->error);
-        file_put_contents('log.txt', "Error: " . $e->getMessage() . "\n", FILE_APPEND);
+        file_put_contents('log.txt', "Error: " . $stmt->error . "\n", FILE_APPEND);
     }
 
     // Close the connection
@@ -85,7 +85,7 @@ if ($_POST) {
 function postDataToSolr($postData) {
 
     // Solr update URL
-    $solrUpdateUrl = 'http://localhost:8983/solr/feedback/update?commit=true';
+    $solrUpdateUrl = 'http://35.221.213.87/solr/feedback/update?commit=true';
 
     // Initialize cURL session
     $ch = curl_init();
@@ -94,12 +94,14 @@ function postDataToSolr($postData) {
     curl_setopt($ch, CURLOPT_URL, $solrUpdateUrl);
     curl_setopt($ch, CURLOPT_POST, 1);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(array($postData)));
+    curl_setopt($ch, CURLOPT_USERPWD, "adar:12345678");
     curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
     // Execute cURL session and get the response
     $response = curl_exec($ch);
 
+    file_put_contents('log.txt', " $response \n", FILE_APPEND);
     // Check for cURL errors
     if (curl_errno($ch)) {
         echo 'Curl error: ' . curl_error($ch);

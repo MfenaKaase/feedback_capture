@@ -1,165 +1,39 @@
-Close Time Stamp 2023-11-15 06:56:12 
- Open Time Stamp: 2023-11-15 06:53:46 
+
+Close Time Stamp 2024-01-25 12:50:55 
+ Open Time Stamp: 2024-01-25 12:48:56 
 Data saved successfully
-Close Time Stamp 2023-11-15 06:58:19 
- Open Time Stamp: 2023-11-15 06:58:13 
+ <html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-1"/>
+<title>Error 401 require authentication</title>
+</head>
+<body><h2>HTTP ERROR 401 require authentication</h2>
+<table>
+<tr><th>URI:</th><td>/solr/feedback/update</td></tr>
+<tr><th>STATUS:</th><td>401</td></tr>
+<tr><th>MESSAGE:</th><td>require authentication</td></tr>
+<tr><th>SERVLET:</th><td>default</td></tr>
+</table>
+
+</body>
+</html>
+ 
+Close Time Stamp 2024-01-25 12:56:51 
+ Open Time Stamp: 2024-01-25 12:56:33 
 Data saved successfully
-Close Time Stamp 2023-11-15 07:24:43 
- Open Time Stamp: 2023-11-15 07:20:01 
-Data saved successfully
-Close Time Stamp 2023-11-15 07:26:59 
- Open Time Stamp: 2023-11-15 07:25:19 
-Data saved successfully
-Close Time Stamp 2023-11-15 07:31:46 
- Open Time Stamp: 2023-11-15 07:28:29 
-Data saved successfully
-Close Time Stamp 2023-11-15 07:36:03 
- Open Time Stamp: 2023-11-15 07:32:27 
-Data saved successfully
-Close Time Stamp 2023-11-15 07:38:01 
- Open Time Stamp: 2023-11-15 07:37:51 
-Data saved successfully
-Close Time Stamp 2023-11-15 07:46:47 
- Open Time Stamp: 2023-11-15 07:44:51 
-Data saved successfully
-Close Time Stamp 2023-11-15 07:53:34 
- Open Time Stamp: 2023-11-15 07:47:21 
-Data saved successfully
-Close Time Stamp 2023-11-15 07:54:24 
- Open Time Stamp: 2023-11-15 07:54:23 
-Data saved successfully
-Close Time Stamp 2023-11-15 08:02:24 
- Open Time Stamp: 2023-11-15 08:01:19 
-Data saved successfully
-Close Time Stamp 2023-11-15 08:05:48 
- Open Time Stamp: 2023-11-15 08:04:10 
-Data saved successfully
-Close Time Stamp 2023-11-15 08:06:32 
- Open Time Stamp: 2023-11-15 06:59:25 
-Data saved successfully
-Close Time Stamp 2023-11-15 08:10:46 
- Open Time Stamp: 2023-11-15 08:07:00 
-Data saved successfully
-Close Time Stamp 2023-11-15 08:28:22 
- Open Time Stamp: 2023-11-15 06:44:46 
-Data saved successfully
-Close Time Stamp 2023-11-15 08:34:19 
- Open Time Stamp: 2023-11-15 08:32:49 
-Data saved successfully
-Close Time Stamp 2023-11-15 08:41:17 
- Open Time Stamp: 2023-11-15 08:40:18 
-Data saved successfully
-Close Time Stamp 2023-11-15 09:03:55 
- Open Time Stamp: 2023-11-15 09:03:18 
-Data saved successfully
-Close Time Stamp 2023-11-15 09:04:12 
- Open Time Stamp: 2023-11-15 09:03:57 
-Data saved successfully
-Close Time Stamp 2023-11-15 09:04:29 
- Open Time Stamp: 2023-11-15 09:04:13 
-Data saved successfully
-Close Time Stamp 2023-11-15 09:04:45 
- Open Time Stamp: 2023-11-15 09:04:30 
-Data saved successfully
-Close Time Stamp 2023-11-15 09:08:49 
- Open Time Stamp: 2023-11-15 09:02:33 
-Data saved successfully
-Close Time Stamp 2023-11-15 09:35:41 
- Open Time Stamp: 2023-11-15 09:35:38 
-Data saved successfully
-Close Time Stamp 2023-11-15 09:35:52 
- Open Time Stamp: 2023-11-15 09:35:45 
-Data saved successfully
-Close Time Stamp 2023-11-15 09:37:38 
- Open Time Stamp: 2023-11-15 09:35:56 
-Data saved successfully
-Close Time Stamp 2023-11-15 09:39:27 
- Open Time Stamp: 2023-11-15 09:38:05 
-Data saved successfully
-Close Time Stamp 2023-11-15 09:44:18 
- Open Time Stamp: 2023-11-15 09:39:45 
-Data saved successfully
-Close Time Stamp 2023-11-15 09:44:37 
- Open Time Stamp: 2023-11-15 09:44:35 
-Data saved successfully
-Close Time Stamp 2023-11-15 09:44:49 
- Open Time Stamp: 2023-11-15 09:44:42 
-Data saved successfully
-Close Time Stamp 2023-11-15 09:45:06 
- Open Time Stamp: 2023-11-15 09:44:50 
-Data saved successfully
-Close Time Stamp 2023-11-15 09:45:10 
- Open Time Stamp: 2023-11-15 09:45:07 
-Data saved successfully
-Close Time Stamp 2023-11-15 09:51:23 
- Open Time Stamp: 2023-11-15 09:45:11 
-Data saved successfully
-Close Time Stamp 2023-11-15 09:51:30 
- Open Time Stamp: 2023-11-15 09:51:24 
-Data saved successfully
-Close Time Stamp 2023-11-15 10:02:35 
- Open Time Stamp: 2023-11-15 10:02:35 
-Data saved successfully
-Close Time Stamp 2023-11-15 10:02:44 
- Open Time Stamp: 2023-11-15 10:02:40 
-Data saved successfully
-Close Time Stamp 2023-11-15 10:02:55 
- Open Time Stamp: 2023-11-15 10:02:45 
-Data saved successfully
-Close Time Stamp 2023-11-15 10:02:57 
- Open Time Stamp: 2023-11-15 10:02:55 
-Data saved successfully
-Close Time Stamp 2023-11-15 10:03:35 
- Open Time Stamp: 2023-11-15 10:02:58 
-Data saved successfully
-Close Time Stamp 2023-11-15 10:05:59 
- Open Time Stamp: 2023-11-15 10:05:20 
-Data saved successfully
-Close Time Stamp 2023-11-15 10:08:19 
- Open Time Stamp: 2023-11-15 10:02:58 
-Data saved successfully
-Close Time Stamp 2023-11-15 10:08:27 
- Open Time Stamp: 2023-11-15 09:52:42 
-Data saved successfully
-Close Time Stamp 2023-11-15 10:08:32 
- Open Time Stamp: 2023-11-15 09:09:00 
-Data saved successfully
-Close Time Stamp 2023-11-15 10:11:16 
- Open Time Stamp: 2023-11-15 10:08:51 
-Data saved successfully
-Close Time Stamp 2023-11-15 10:21:00 
- Open Time Stamp: 2023-11-15 10:20:57 
-Data saved successfully
-Close Time Stamp 2023-11-26 16:36:51 
- Open Time Stamp: 2023-11-26 16:34:32 
-Data saved successfully
-Close Time Stamp 2023-11-26 16:49:17 
- Open Time Stamp: 2023-11-26 16:39:45 
-Data saved successfully
-Close Time Stamp 2023-11-26 16:49:16 
- Open Time Stamp: 2023-11-26 16:39:45 
-Data saved successfully
-Close Time Stamp 2023-11-30 23:22:45 
- Open Time Stamp: 2023-11-30 23:22:34 
-Data saved successfully
-Close Time Stamp 2023-12-01 00:09:42 
- Open Time Stamp: 2023-12-01 00:09:32 
-Data saved successfully
-Close Time Stamp 2023-12-01 00:15:10 
- Open Time Stamp: 2023-12-01 00:14:29 
-Data saved successfully
-Close Time Stamp 2023-12-01 00:19:16 
- Open Time Stamp: 2023-12-01 00:18:37 
-Data saved successfully
-Close Time Stamp 2023-12-01 00:22:55 
- Open Time Stamp: 2023-12-01 00:22:36 
-Data saved successfully
-Close Time Stamp 2023-12-03 20:37:10 
- Open Time Stamp: 2023-12-03 20:36:53 
-Data saved successfully
-Close Time Stamp 2023-12-04 12:12:44 
- Open Time Stamp: 2023-12-04 12:12:41 
-Data saved successfully
-Close Time Stamp 2023-12-04 12:18:23 
- Open Time Stamp: 2023-12-04 12:16:23 
-Data saved successfully
+ <html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-1"/>
+<title>Error 403 Unauthorized request, Response code: 403</title>
+</head>
+<body><h2>HTTP ERROR 403 Unauthorized request, Response code: 403</h2>
+<table>
+<tr><th>URI:</th><td>/solr/feedback/update</td></tr>
+<tr><th>STATUS:</th><td>403</td></tr>
+<tr><th>MESSAGE:</th><td>Unauthorized request, Response code: 403</td></tr>
+<tr><th>SERVLET:</th><td>default</td></tr>
+</table>
+
+</body>
+</html>
+ 
