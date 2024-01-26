@@ -70,14 +70,17 @@ var saveCaptureData = {
     query = String(getUrlVars(lastUrl).q);
     r = query.split('+').join(' ');
 
-    fetch(`https://34.162.237.151/solr/feedback/select?indent=true&q.op=OR&q=${r}&useParams=`)
-    .then(response => response.json())
-    .then(data => {
-      console.log(data)
-    })
-    .catch(err => {
-      console.log(err)
-    })
+    var formdata = new FormData();
+
+    var requestOptions = {
+      method: 'GET',
+      redirect: 'follow'
+    };
+
+    fetch(`localhost:8000/fetch_results.php/?query=${query}`, requestOptions)
+      .then(response => response.text())
+      .then(result => console.log(result))
+      .catch(error => console.log('error', error));
 
     chrome.storage.sync.set({ 'searchQuery': r }, function () {
       console.log("Value is set to " + r);
@@ -284,7 +287,7 @@ var saveCaptureData = {
     } else {
       console.log("No meaningful paragraph found.");
     }
-    
+
   },
 
   //Save captured data
@@ -404,8 +407,3 @@ async function findMeaningfulParagraph(paragraphs) {
   // Return null if no meaningful paragraph is found
   return null;
 }
-
-
-// curl --user solr:YOUR_ADMIN_PASSWORD -X POST -H 'Content-type: application/json' --data-binary '{
-//   "set-user": {"newuser": "newpassword"}
-// }' http://localhost:8983/solr/admin/authentication

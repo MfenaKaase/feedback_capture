@@ -94,7 +94,7 @@ function postDataToSolr($postData) {
     curl_setopt($ch, CURLOPT_URL, $solrUpdateUrl);
     curl_setopt($ch, CURLOPT_POST, 1);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(array($postData)));
-    curl_setopt($ch, CURLOPT_USERPWD, "adar:12345678");
+    curl_setopt($ch, CURLOPT_USERPWD, "admin:dzHS+mRw.9YQ");
     curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
