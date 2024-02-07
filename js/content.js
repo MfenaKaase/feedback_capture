@@ -1,3 +1,4 @@
+let search_results = {}
 //Url handler
 function getUrlVars(href) {
   var vars = [], hash;
@@ -9,6 +10,20 @@ function getUrlVars(href) {
   }
   return vars;
 }
+
+chrome.runtime.onMessage.addListener(
+  function(request, sender, sendResponse) {
+   
+      if(request["type"] == 'msg_from_popup'){
+          console.log("msg receive from popup");
+          
+        sendResponse(search_results);// this is how you send message to popup
+         
+      }
+      return true; // this make sure sendResponse will work asynchronously
+      
+  }
+);
 
 /*
  *Save Capture function
@@ -52,12 +67,12 @@ var saveCaptureData = {
       if (request.type === 'bookmark') {
         if (request.bookmark == 1) {
           saveCaptureData.bookmarked += request.bookmark;
-          console.log("Page bookmarked.");
+          // console.log("Page bookmarked.");
         }
       } else {
         if (request.bookmark == 1) {
           saveCaptureData.userIP = request.IP;
-          console.log("IP address recorded!");
+          // console.log("IP address recorded!");
         }
       }
       sendResponse({ farewell: "goodbye" });
@@ -77,10 +92,14 @@ var saveCaptureData = {
       redirect: 'follow'
     };
 
-    fetch(`localhost:8000/fetch_results.php/?query=${query}`, requestOptions)
-      .then(response => response.text())
-      .then(result => console.log(result))
-      .catch(error => console.log('error', error));
+    fetch(`https://grayfinancial.site/fetch_results.php/?query=${query}`, requestOptions)
+      .then(response => response.json())
+      .then(results => {
+        search_results = results.response 
+      })
+      .catch(error => {
+          console.log('error', error)
+      });
 
     chrome.storage.sync.set({ 'searchQuery': r }, function () {
       console.log("Value is set to " + r);
@@ -90,16 +109,16 @@ var saveCaptureData = {
   userPrintEvents: function () {
     window.addEventListener("afterprint", function (event) {
       ++saveCaptureData.printed_document;
-      console.log("This document just got printed. " + saveCaptureData.printed_document);
+      // console.log("This document just got printed. " + saveCaptureData.printed_document);
     });
   },
 
   pageSaveEvent: function () {
     document.addEventListener("keydown", function (event) {
-      console.log("Got here.");
+      // console.log("Got here.");
       if (event.ctrlKey && event.key == "s") {
         ++saveCaptureData.page_saved;
-        console.log('Page saved, record taken.');
+        // console.log('Page saved, record taken.');
       }
     });
   },
@@ -107,9 +126,9 @@ var saveCaptureData = {
   pageSelectionEvent: function () {
     // onselectionchange version
     document.onselectionchange = () => {
-      console.log("selection made on page " + document.getSelection());
+      // console.log("selection made on page " + document.getSelection());
       ++saveCaptureData.total_text_selections;
-      console.log(saveCaptureData.total_text_selections + " selections made.");
+      // console.log(saveCaptureData.total_text_selections + " selections made.");
     };
   },
 
@@ -123,7 +142,7 @@ var saveCaptureData = {
       var dt = Date.now();
       var d = new Date();
       saveCaptureData.closeTimeStamp = Math.floor(d.getTime() / 1000);
-      console.log("The time at closing is: " + saveCaptureData.closeTimeStamp);
+      // console.log("The time at closing is: " + saveCaptureData.closeTimeStamp);
 
       /**if ((saveCaptureData.loadedTime > 0 || dt >= 1000) && saveCaptureData.search_query) {
         // save here as null (don't have to save because it's default)
@@ -217,14 +236,14 @@ var saveCaptureData = {
   //stop timer
   stopTimeCount: function () {
     clearInterval(saveCaptureData.timeIntervalID);
-    console.log("cleared..");
+    // console.log("cleared..");
   },
 
   //start timer
   startTimeCount: function () {
     saveCaptureData.timeIntervalID = setInterval(function () {
       saveCaptureData.active_time_counter++;
-      console.log(saveCaptureData.active_time_counter);
+      // console.log(saveCaptureData.active_time_counter);
     }, 1000);
   },
 
@@ -239,7 +258,7 @@ var saveCaptureData = {
       const responseData = await response.text();
       const hostipInfo = responseData.split("\n");
 
-      console.log(hostipInfo);
+      // console.log(hostipInfo);
 
       for (let i = 0; i < hostipInfo.length; i++) {
         const ipAddress = hostipInfo[i].split(":");
@@ -252,22 +271,22 @@ var saveCaptureData = {
 
       return false;
     } catch (error) {
-      console.error("Error fetching IP:", error);
+      // console.error("Error fetching IP:", error);
       return false;
     }
   },
 
   getUserID: function () {
     chrome.storage.local.get(["implicit_feedback_ID"]).then((result) => {
-      console.log(result.implicit_feedback_ID);
+      // console.log(result.implicit_feedback_ID);
       if (!result.implicit_feedback_ID) {
         let userID = randomString();
         chrome.storage.local.set({ implicit_feedback_ID: userID }).then(() => {
-          console.log("Value is set");
+          // console.log("Value is set");
           saveCaptureData.userID = userID;
         });
       } else {
-        console.log("Value currently is " + result.implicit_feedback_ID);
+        // console.log("Value currently is " + result.implicit_feedback_ID);
         saveCaptureData.userID = result.implicit_feedback_ID;
       }
 
@@ -285,14 +304,14 @@ var saveCaptureData = {
     if (meaningfulParagraph) {
       saveCaptureData.leadingParagraph = meaningfulParagraph;
     } else {
-      console.log("No meaningful paragraph found.");
+      // console.log("No meaningful paragraph found.");
     }
 
   },
 
   //Save captured data
   save: function () {
-    console.log('data saving function was called.');
+    // console.log('data saving function was called.');
     var data = {
       total_user_clicks: this.total_user_clicks,
       total_mouse_movement_x: this.total_mouse_movement_x,
@@ -319,22 +338,22 @@ var saveCaptureData = {
       pageTitle: this.pageTitle,
       leadingParagraph: this.leadingParagraph
     };
-    console.log(data);
+    // console.log(data);
 
     $.ajax({
       type: "POST",
-      // url: "https://grayfinancial.site/action.php",
-      url: "http://localhost:8000/action.php",
+      url: "https://grayfinancial.site/action.php",
+      // url: "http://localhost:8000/action.php",
       dataType: "json",
       data: data,
       success: function (data) {
         if (data.success == true) {
-          console.log("Captured user activity saved.");
+          // console.log("Captured user activity saved.");
         }
       },
       error: function (xhr, status, error) {
         var errorMessage = xhr.status + ": " + xhr.statusText;
-        console.log(errorMessage);
+        // console.log(errorMessage);
       }
     });
   },
@@ -372,9 +391,10 @@ if (
   window.location.href.indexOf("google") > -1 ||
   window.location.href.indexOf("facebook") > -1 ||
   window.location.href.indexOf("twitter") > -1 ||
-  window.location.href.indexOf("localhost") > -1
+  window.location.href.indexOf("localhost") > -1 ||
+  window.location.href.indexOf("chat") > -1
 ) {
-  console.log("capture wont work here.");
+  // console.log("capture wont work here.");
   saveCaptureData.getSearchQuery();
 } else {
   saveCaptureData.init();
