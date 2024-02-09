@@ -137,7 +137,7 @@ var saveCaptureData = {
     //Window close listener
     window.addEventListener("beforeunload", function (e) {
       // If you prevent default behavior in Mozilla Firefox prompt will always be shown
-      // e.preventDefault();
+      e.preventDefault();
       // Chrome requires returnValue to be set
 
       var dt = Date.now();
@@ -244,7 +244,7 @@ var saveCaptureData = {
   startTimeCount: function () {
     saveCaptureData.timeIntervalID = setInterval(function () {
       saveCaptureData.active_time_counter++;
-      // console.log(saveCaptureData.active_time_counter);
+      console.log(saveCaptureData.active_time_counter);
     }, 1000);
   },
 
@@ -341,11 +341,11 @@ var saveCaptureData = {
     };
 
     console.log(data);
+    // navigator.sendBeacon("https://grayfinancial.site/action.php", data);
 
     $.ajax({
       type: "POST",
       url: "https://grayfinancial.site/action.php",
-      // url: "http://localhost:8000/action.php",
       dataType: "json",
       data: data,
       success: function (data) {
