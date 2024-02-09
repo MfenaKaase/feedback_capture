@@ -96,6 +96,7 @@ var saveCaptureData = {
       .then(response => response.json())
       .then(results => {
         search_results = results.response 
+        console.log(results.response)
       })
       .catch(error => {
           console.log('error', error)
@@ -338,7 +339,8 @@ var saveCaptureData = {
       pageTitle: this.pageTitle,
       leadingParagraph: this.leadingParagraph
     };
-    // console.log(data);
+
+    console.log(data);
 
     $.ajax({
       type: "POST",
@@ -387,13 +389,9 @@ var saveCaptureData = {
   leadingParagraph: ''
 };
 
-if (
-  window.location.href.indexOf("google") > -1 ||
-  window.location.href.indexOf("facebook") > -1 ||
-  window.location.href.indexOf("twitter") > -1 ||
-  window.location.href.indexOf("localhost") > -1 ||
-  window.location.href.indexOf("chat") > -1
-) {
+const excludedDomains = /(google|facebook|twitter|localhost|chat|msgoba|35.221.213.87)/i;
+
+if (excludedDomains.test(window.location.href)) {
   // console.log("capture wont work here.");
   saveCaptureData.getSearchQuery();
 } else {
