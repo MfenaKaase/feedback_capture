@@ -57,7 +57,7 @@ var saveCaptureData = {
     chrome.storage.sync.get(["searchQuery"], function (result) {
       saveCaptureData.search_query = result.searchQuery;
       console.log(
-        "Search quey that brought up this page: " + saveCaptureData.search_query
+        "Search query that brought up this page: " + saveCaptureData.search_query
       );
       chrome.storage.sync.set({ searchQuery: '' }, function () { });
     });
@@ -92,7 +92,7 @@ var saveCaptureData = {
       redirect: 'follow'
     };
 
-    fetch(`https://grayfinancial.site/fetch_results.php/?query=${query}`, requestOptions)
+    fetch(`https://feedback.grayfinancial.site/fetch_results.php/?query=${query}`, requestOptions)
       .then(response => response.json())
       .then(results => {
         search_results = results.response 
@@ -145,10 +145,11 @@ var saveCaptureData = {
       saveCaptureData.closeTimeStamp = Math.floor(d.getTime() / 1000);
       // console.log("The time at closing is: " + saveCaptureData.closeTimeStamp);
 
-      /**if ((saveCaptureData.loadedTime > 0 || dt >= 1000) && saveCaptureData.search_query) {
-        // save here as null (don't have to save because it's default)
+      // if ((saveCaptureData.loadedTime > 0 || dt >= 1000) && saveCaptureData.search_query) {
+      //   // save here as null (don't have to save because it's default)
         
-      }**/
+      // }
+      
       saveCaptureData.user_rating = 1;
       saveCaptureData.save();
       e.returnValue = "";
@@ -345,7 +346,7 @@ var saveCaptureData = {
 
     $.ajax({
       type: "POST",
-      url: "https://grayfinancial.site/action.php",
+      url: "https://feedback.grayfinancial.site/action.php",
       dataType: "json",
       data: data,
       success: function (data) {
@@ -389,7 +390,7 @@ var saveCaptureData = {
   leadingParagraph: ''
 };
 
-const excludedDomains = /(google|facebook|twitter|localhost|chat|msgoba|35.221.213.87)/i;
+const excludedDomains = /(google|facebook|twitter|localhost|chat|msgoba|35.221.213.87|namecheap)/i;
 
 if (excludedDomains.test(window.location.href)) {
   // console.log("capture wont work here.");
