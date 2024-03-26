@@ -17,10 +17,10 @@ chrome.runtime.onMessage.addListener(
       if(request["type"] == 'msg_from_popup'){
           console.log("msg receive from popup");
           
-        sendResponse(search_results);// this is how you send message to popup
+        sendResponse(search_results);
          
       }
-      return true; // this make sure sendResponse will work asynchronously
+      return true; 
       
   }
 );
@@ -52,6 +52,7 @@ var saveCaptureData = {
     this.getUserID();
     this.getPageTitle();
     this.getLeadingParagraph();
+    this.getCohort();
 
     //Retrieve search query from storage
     chrome.storage.sync.get(["searchQuery"], function (result) {
@@ -92,15 +93,23 @@ var saveCaptureData = {
       redirect: 'follow'
     };
 
-    fetch(`https://feedback.grayfinancial.site/fetch_results.php/?query=${query}`, requestOptions)
+
+    chrome.storage.local.get(['cohort'], function(result) {
+      let cohort = result.cohort;
+      
+      console.log(cohort);
+
+      fetch(`https://feedback.grayfinancial.site/fetch_results.php/?query=${query}&cohort=${cohort}`, requestOptions)
       .then(response => response.json())
       .then(results => {
         search_results = results.response 
-        console.log(results.response)
+        console.log(results)
       })
       .catch(error => {
           console.log('error', error)
       });
+    });
+
 
     chrome.storage.sync.set({ 'searchQuery': r }, function () {
       console.log("Value is set to " + r);
@@ -295,6 +304,20 @@ var saveCaptureData = {
     });
   },
 
+  getCohort: function () {
+    chrome.storage.local.get(["cohort"]).then((result) => {
+      // console.log(result.implicit_feedback_ID);
+      if (result.cohort) {
+        console.log("Value currently is " + result.cohort);
+        saveCaptureData.cohort = result.cohort;
+      } else {
+        console.log('No cohort found');
+        console.log(result);
+      }
+
+    });
+  },
+
   getPageTitle: function () {
     saveCaptureData.pageTitle = document.title;
   },
@@ -338,7 +361,8 @@ var saveCaptureData = {
       search_query: this.search_query,
       user_ID: this.userID,
       pageTitle: this.pageTitle,
-      leadingParagraph: this.leadingParagraph
+      leadingParagraph: this.leadingParagraph,
+      cohort: this.cohort
     };
 
     console.log(data);
@@ -387,10 +411,11 @@ var saveCaptureData = {
   search_query: '',
   userID: '',
   pageTitle: '',
-  leadingParagraph: ''
+  leadingParagraph: '',
+  cohort: ''
 };
 
-const excludedDomains = /(google|facebook|twitter|localhost|chat|msgoba|35.221.213.87|namecheap)/i;
+const excludedDomains = /(google|facebook|twitter|localhost|chat.openai|msgoba|35.221.213.87|namecheap)/i;
 
 if (excludedDomains.test(window.location.href)) {
   // console.log("capture wont work here.");

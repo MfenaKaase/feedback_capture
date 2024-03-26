@@ -41,6 +41,7 @@ if ($_POST) {
     $search_query = $_POST['search_query'];
     $page_title = $_POST['pageTitle'];
     $leading_paragraph = $_POST['leadingParagraph'];
+    $cohort = $_POST['cohort'];
 
     // Sample data
     $dataToPost = array(
@@ -50,17 +51,21 @@ if ($_POST) {
         "total_active_time" => $total_active_time,
         "total_copy" => $total_copy,
         "url" => $url,
-        "userID" => $userID
+        "userID" => $userID,
+        "page_saved" => $page_saved,
+        "bookmarked" => $bookmarked,
+        "printed_document" => $printed_document,
+        "cohort" => $cohort
     );
 
 
 
     // SQL statement
-    $sql = "INSERT INTO feedback (total_user_clicks, total_mouse_movement_x, total_mouse_movement_y, total_user_scroll, user_rating, total_key_strokes, total_active_time, total_mouse_distance, total_mouse_speed, url, userID, total_copy, openTimeStamp, closeTimeStamp, velocity_time_count, average_mouse_speed, total_text_selections, bookmarked, printed_document, page_saved, search_query, page_title, leading_paragraph) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO feedback (total_user_clicks, total_mouse_movement_x, total_mouse_movement_y, total_user_scroll, user_rating, total_key_strokes, total_active_time, total_mouse_distance, total_mouse_speed, url, userID, total_copy, openTimeStamp, closeTimeStamp, velocity_time_count, average_mouse_speed, total_text_selections, bookmarked, printed_document, page_saved, search_query, page_title, leading_paragraph, cohort) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     // Prepare and bind the statement
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("iiiiiiiiississiiiiiisss", $total_user_clicks, $total_mouse_movement_x, $total_mouse_movement_y, $total_user_scroll, $user_rating, $total_key_strokes, $total_active_time, $total_mouse_distance, $total_mouse_speed, $url, $userID, $total_copy, $openTimestamp, $closeTimestamp, $velocity_time_count, $average_mouse_speed, $total_text_selections, $bookmarked, $printed_document, $page_saved, $search_query, $page_title, $leading_paragraph);
+    $stmt->bind_param("iiiiiiiiississiiiiiissss", $total_user_clicks, $total_mouse_movement_x, $total_mouse_movement_y, $total_user_scroll, $user_rating, $total_key_strokes, $total_active_time, $total_mouse_distance, $total_mouse_speed, $url, $userID, $total_copy, $openTimestamp, $closeTimestamp, $velocity_time_count, $average_mouse_speed, $total_text_selections, $bookmarked, $printed_document, $page_saved, $search_query, $page_title, $leading_paragraph, $cohort);
 
     // Execute the statement
     if ($stmt->execute()) {

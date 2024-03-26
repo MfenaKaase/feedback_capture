@@ -24,10 +24,12 @@ const displaySearchResults = (el, docs) => {
         // Convert map values back to an array
         const uniqueDocs = Array.from(urlMap.values());
 
+        console.log(uniqueDocs);
+
         // Calculate average for objects with duplicate URLs
         uniqueDocs.forEach(doc => {
-            doc.interestWeight /= doc.count;
-            doc.aggregatedWeight /= doc.count;
+            doc.interestWeight /= doc.count * 10;
+            doc.aggregatedWeight /= doc.count * 10;
         });
 
         // Sort the uniqueDocs array based on aggregatedWeight in descending order
@@ -39,6 +41,7 @@ const displaySearchResults = (el, docs) => {
                 <div class="d-flex w-100 justify-content-between">
                 <h5 class="mb-1">${doc.page_title}</h5>
                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                <i class='bx bx-star'></i>
                 ${doc.aggregatedWeight.toFixed(2)}
                 </span>
                 </div>
@@ -53,6 +56,32 @@ const displaySearchResults = (el, docs) => {
 
 
 document.addEventListener('DOMContentLoaded', function () {
+
+    let tabs = document.querySelectorAll('.nav-link');
+
+    tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            let target = tab.getAttribute('data-bs-target');
+
+            // Remove active class from all tabs
+            tabs.forEach(function(t) {
+                t.classList.remove('active');
+            });
+
+            // Add active class to the clicked tab
+            tab.classList.add('active');
+
+            // Hide all tab content
+            let tabContents = document.querySelectorAll('.tab-pane');
+            tabContents.forEach(function(content) {
+                content.classList.remove('show', 'active');
+            });
+
+            // Show the corresponding tab content
+            document.querySelector(target).classList.add('show', 'active');
+        });
+    });
+
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         chrome.tabs.sendMessage(tabs[0].id, { type: "msg_from_popup" }, function (response) {
             const container = document.getElementById('feedbackResultsContainer');
@@ -62,6 +91,94 @@ document.addEventListener('DOMContentLoaded', function () {
 
         });
     });
+
+    let cohortBar = document.getElementById('cohort-bar');
+    let cohortInput = document.getElementById('cohort-input');
+    let saveButton = document.getElementById('save-cohort');
+    let message = document.getElementById('message');
+    let copyMessage = document.getElementById('copy-message');
+
+    chrome.storage.local.get(['cohorts'], function(result) {
+        let cohorts = result.cohorts;
+        if (Array.isArray(cohorts)) {
+            // Populate the unordered list with existing cohorts
+            populateCohortsList(cohorts);
+        } else {
+            chrome.storage.local.remove('cohorts',function() {
+               console.log("Cohorts cleared successfully!")
+            })
+        }
+    });
+    
+    function populateCohortsList(cohorts) {
+        let cohortsList = document.getElementById('cohorts');
+        cohortsList.innerHTML = ''; 
+        cohorts.forEach(cohort => {
+            let listItem = document.createElement('li');
+            listItem.classList.add('list-group-item')
+            listItem.innerHTML = `${cohort} <i class='bx bx-copy' style="cursor:pointer"></i>`;
+            cohortsList.appendChild(listItem);
+        });
+
+        let copyBtns = document.querySelectorAll('.bx-copy');
+        copyBtns.forEach(copyBtn => {
+            copyBtn.addEventListener('click', evt => {
+                let text = evt.target.parentNode.textContent;
+                navigator.clipboard.writeText(text);
+                copyMessage.innerText = `copied successfully! ${text}`
+            })
+        })
+    }
+    
+    saveButton.addEventListener('click', function () {
+        message.textContent = "saving...";
+        let spinner = document.createElement('div');
+        spinner.classList.add('spinner-border', 'text-light');
+        spinner.setAttribute('role', 'status');
+        
+        // Append spinner to the saveButton
+        saveButton.appendChild(spinner);
+    
+        // Disable the saveButton
+        saveButton.setAttribute('disabled', true);
+    
+        // Get the value of the cohortInput and trim any whitespace
+        let newCohort = cohortInput.value.trim().split(' ').join('_');
+        if (newCohort !== '') {
+            // Save the newCohort value to local storage
+            chrome.storage.local.get(['cohorts'], function(result) {
+                let cohorts = result.cohorts || [];
+                if (!cohorts.includes(newCohort)) {
+                    cohorts.push(newCohort);
+                    chrome.storage.local.set({ cohorts: cohorts }, function() {
+                        spinner.remove();
+                        console.log('Cohort saved successfully.');
+                        // After saving is complete, remove the spinner and enable the saveButton
+                        saveButton.removeAttribute('disabled');
+                        // Populate the unordered list with updated cohorts
+                        populateCohortsList(cohorts);
+                    });
+
+            
+                } else {
+                    spinner.remove();
+                    console.log('Cohort already exists.');
+                    // After saving is complete, remove the spinner and enable the saveButton
+                    saveButton.removeAttribute('disabled');
+                }
+                chrome.storage.local.set({ cohort: newCohort });
+            });
+            message.textContent = "cohort saved!"
+        } else {
+            spinner.remove();
+            // After saving is complete, remove the spinner and enable the saveButton
+            saveButton.removeAttribute('disabled');
+            message.textContent = "something went wrong!"
+        }
+    });
+    
+    
+    
 })
 
 

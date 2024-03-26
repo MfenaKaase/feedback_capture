@@ -2,6 +2,8 @@
 <html>
 <head>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self' https://cdn.jsdelivr.net;">
   </head>
   <script src="./js/popup.js"></script>
   <title>Implicit Feedback Capture</title>
@@ -12,36 +14,103 @@
     }
 
     body > div {
-      max-width: 80%;
+      width: 80%;
       margin: auto;
     }
 
     button {
         background-color: rgba(128, 255, 0, 0.699);
-        border: none;
-        border-radius: 5px;
-        padding: 5px;
         cursor: pointer;
+    }
+
+    #cohort-bar {
+      /* display: none; */
+      background-color: #f0f0f0;
+      padding: 10px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
+
+    button#save-cohort {
+      display: flex;
+      align-items: center;
     }
   </style>
 </head>
 <body>
-  <div class="text-center">
+  <div class="text-center container">
     <img src="./icon/48.png" alt="my capture" >
-    <h2>Feedback Capture - Search Results</h2>
-    <!-- <form action="">
-      <input type="text" class="form-control" name="search" id="search" placeholder="enter a query">
-    </form> -->
-    <div id="feedbackResultsContainer">
-      Nothing To See Here!
+
+    <div class="row">
+      <div class="col-xl-8">
+
+        <div class="card">
+          <div class="card-body pt-3">
+            <!-- Bordered Tabs -->
+            <ul class="nav nav-tabs nav-tabs-bordered" role="tablist">
+
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#profile-overview" aria-selected="true" role="tab">Results</button>
+              </li>
+
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile-edit" aria-selected="false" role="tab" tabindex="-1">Login</button>
+              </li>
+
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile-settings" aria-selected="false" role="tab" tabindex="-1">Cohorts</button>
+              </li>
+
+            </ul>
+            <div class="tab-content pt-2">
+
+              <div class="tab-pane fade profile-overview active show" id="profile-overview" role="tabpanel">
+                <h2 class="card-title">Feedback Capture - Search Results</h2>
+            
+                <div id="feedbackResultsContainer">
+                  Nothing To See Here!
+                </div>
+
+              </div>
+
+              <div class="tab-pane fade profile-edit pt-3" id="profile-edit" role="tabpanel">
+
+                <h2>Login</h2>
+                <div id="cohort-bar">
+                  <p>Login to Cohort</p>
+                 <div class="d-flex">
+                  <input type="text" id="cohort-input" placeholder="Enter cohort ID">
+                  <button id="save-cohort" class="btn btn-success">Login</button>
+                 </div>
+                 <p id="message"></p>
+                </div>
+
+              </div>
+
+              <div class="tab-pane fade pt-3" id="profile-settings" role="tabpanel">
+
+                    <h2>Cohorts - Coming Soon</h2>
+                    <ul id="cohorts" class="list-group">
+
+                    </ul>
+                    <p id="copy-message" style="color: rgb(103, 185, 103);"></p>
+              </div>
+
+            </div>
+            <!-- End Bordered Tabs -->
+
+          </div>
+        </div>
+
+      </div>
     </div>
+   
   </div>
 
 <script src="">
   // popup.js
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Send a message to the content script when the popup is opened
     chrome.runtime.sendMessage({ popupOpened: true });
 });
 
