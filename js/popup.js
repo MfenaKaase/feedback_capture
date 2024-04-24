@@ -114,65 +114,26 @@ document.addEventListener('DOMContentLoaded', function () {
             let listItem = document.createElement('li');
             listItem.setAttribute('id', cohort.id);
             listItem.classList.add('list-group-item');
-            listItem.innerHTML = `${cohort.name} <i class='bx bx-copy' style="cursor:pointer"></i>`;
+            listItem.classList.add('d-flex');
+            listItem.classList.add('justify-content-between');
+            listItem.classList.add('align-items-center');
+            listItem.innerHTML = ` <p>${cohort.name}</p>
+            <button class='btn btn-dark bx bx-door-open' style="cursor:pointer" id="${cohort.name}">Login</buttob>`;
             cohortsList.appendChild(listItem);
         });
 
-        let copyBtns = document.querySelectorAll('.bx-copy');
-        copyBtns.forEach(copyBtn => {
-            copyBtn.addEventListener('click', evt => {
-                let text = evt.target.parentNode.textContent;
-                navigator.clipboard.writeText(text);
-                copyMessage.innerText = `copied successfully! ${text}`
+        let LoginBtns = document.querySelectorAll('.bx-door-open');
+        LoginBtns.forEach(LoginBtn => {
+            LoginBtn.addEventListener('click', evt => {
+                let cohort = evt.target.id;
+                chrome.storage.local.set({ cohort: cohort });
+                copyMessage.innerText = `Login successful! ${cohort}`
             })
         })
     }
     
     saveButton.addEventListener('click', function () {
-        message.textContent = "saving...";
-        let spinner = document.createElement('div');
-        spinner.classList.add('spinner-border', 'text-light');
-        spinner.setAttribute('role', 'status');
         
-        // Append spinner to the saveButton
-        saveButton.appendChild(spinner);
-    
-        // Disable the saveButton
-        saveButton.setAttribute('disabled', true);
-    
-        // Get the value of the cohortInput and trim any whitespace
-        let newCohort = cohortInput.value.trim().split(' ').join('_');
-        if (newCohort !== '') {
-            // Save the newCohort value to local storage
-            chrome.storage.local.get(['cohorts'], function(result) {
-                let cohorts = result.cohorts || [];
-                if (!cohorts.includes(newCohort)) {
-                    cohorts.push(newCohort);
-                    chrome.storage.local.set({ cohorts: cohorts }, function() {
-                        spinner.remove();
-                        console.log('Cohort saved successfully.');
-                        // After saving is complete, remove the spinner and enable the saveButton
-                        saveButton.removeAttribute('disabled');
-                        // Populate the unordered list with updated cohorts
-                        populateCohortsList(cohorts);
-                    });
-
-            
-                } else {
-                    spinner.remove();
-                    console.log('Cohort already exists.');
-                    // After saving is complete, remove the spinner and enable the saveButton
-                    saveButton.removeAttribute('disabled');
-                }
-                chrome.storage.local.set({ cohort: newCohort });
-            });
-            message.textContent = "cohort saved!"
-        } else {
-            spinner.remove();
-            // After saving is complete, remove the spinner and enable the saveButton
-            saveButton.removeAttribute('disabled');
-            message.textContent = "something went wrong!"
-        }
     });
     
     
