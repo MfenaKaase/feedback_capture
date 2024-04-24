@@ -93,7 +93,6 @@ var saveCaptureData = {
       redirect: 'follow'
     };
 
-
     chrome.storage.local.get(['cohort'], function(result) {
       let cohort = result.cohort;
       

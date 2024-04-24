@@ -98,25 +98,23 @@ document.addEventListener('DOMContentLoaded', function () {
     let message = document.getElementById('message');
     let copyMessage = document.getElementById('copy-message');
 
-    chrome.storage.local.get(['cohorts'], function(result) {
-        let cohorts = result.cohorts;
-        if (Array.isArray(cohorts)) {
-            // Populate the unordered list with existing cohorts
-            populateCohortsList(cohorts);
-        } else {
-            chrome.storage.local.remove('cohorts',function() {
-               console.log("Cohorts cleared successfully!")
-            })
-        }
-    });
+    fetch(`https://feedback.grayfinancial.site/fetch_cohorts.php`)
+      .then(response => response.json())
+      .then(cohorts => {
+        populateCohortsList(cohorts);
+      })
+      .catch(error => {
+          console.log('error', error)
+      });
     
     function populateCohortsList(cohorts) {
         let cohortsList = document.getElementById('cohorts');
         cohortsList.innerHTML = ''; 
         cohorts.forEach(cohort => {
             let listItem = document.createElement('li');
-            listItem.classList.add('list-group-item')
-            listItem.innerHTML = `${cohort} <i class='bx bx-copy' style="cursor:pointer"></i>`;
+            listItem.setAttribute('id', cohort.id);
+            listItem.classList.add('list-group-item');
+            listItem.innerHTML = `${cohort.name} <i class='bx bx-copy' style="cursor:pointer"></i>`;
             cohortsList.appendChild(listItem);
         });
 
