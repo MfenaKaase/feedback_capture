@@ -2,7 +2,7 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-$servername = "localhost:3306";
+$servername = "localhost:3307";
 $username = "root";
 $password = "";
 $dbname = "implicit_feedback_db";  // Replace with your actual database name
@@ -90,7 +90,7 @@ if ($_POST) {
 function postDataToSolr($postData) {
 
     // Solr update URL
-    $solrUpdateUrl = 'http://35.221.213.87/solr/feedback/update?commit=true';
+    $solrUpdateUrl = 'http://localhost:8983/solr/feedback/update?commit=true';
 
     // Initialize cURL session
     $ch = curl_init();
@@ -99,7 +99,7 @@ function postDataToSolr($postData) {
     curl_setopt($ch, CURLOPT_URL, $solrUpdateUrl);
     curl_setopt($ch, CURLOPT_POST, 1);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(array($postData)));
-    curl_setopt($ch, CURLOPT_USERPWD, "admin:dzHS+mRw.9YQ");
+    // curl_setopt($ch, CURLOPT_USERPWD, "");
     curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
@@ -120,20 +120,3 @@ function postDataToSolr($postData) {
 }
 
 ?>
-
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Server</title>
-</head>
-
-<body>
-    <h1>
-
-    </h1>
-</body>
-
-</html>

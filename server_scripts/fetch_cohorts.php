@@ -12,7 +12,8 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 
 // Check connection
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    die("Connection failed: " . $conn->connect_error
+);
 }
 
 // SQL statement
@@ -20,7 +21,7 @@ $sql = "SELECT * FROM cohorts";
 
 // Prepare and bind the statement
 $result = $conn->query($sql);
-var_dump($result);
+// var_dump($result);
 $data = [];
  while ($row = mysqli_fetch_assoc($result)) {
         $data[] = $row;
@@ -28,9 +29,9 @@ $data = [];
 
 // Close the connection
 $conn->close();
-
+$cohorts = json_encode($data);
 // Send the response back to JavaScript
 header('Content-Type: application/json');
-echo $data;
+echo($cohorts);
 
 ?>

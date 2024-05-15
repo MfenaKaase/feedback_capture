@@ -16,7 +16,6 @@ chrome.runtime.onMessage.addListener(
    
       if(request["type"] == 'msg_from_popup'){
           console.log("msg receive from popup");
-          
         sendResponse(search_results);
          
       }
@@ -98,17 +97,24 @@ var saveCaptureData = {
       
       console.log(cohort);
 
-      fetch(`https://feedback.grayfinancial.site/fetch_results.php/?query=${query}&cohort=${cohort}`, requestOptions)
-      .then(response => response.json())
-      .then(results => {
-        search_results = results.response 
-        console.log(results)
-      })
-      .catch(error => {
-          console.log('error', error)
-      });
-    });
+      fetch(`http://localhost:8000/fetch_results.php/?query=${query}&cohort=${cohort}`, requestOptions)
+  .then(response => {
+    // Log the raw response before parsing JSON
+    console.log('Raw response:', response);
+    return response.json();
+  })
+  .then(results => {
+    // Log the parsed JSON data
+    console.log('Parsed JSON:', results);
+    // Access object properties as needed
+    search_results = results.response;
+    console.log('Search results:', search_results);
+  })
+  .catch(error => {
+    console.log('Error:', error);
+  });
 
+    });
 
     chrome.storage.sync.set({ 'searchQuery': r }, function () {
       console.log("Value is set to " + r);
@@ -369,7 +375,7 @@ var saveCaptureData = {
 
     $.ajax({
       type: "POST",
-      url: "https://feedback.grayfinancial.site/action.php",
+      url: "http://localhost:8000/action.php",
       dataType: "json",
       data: data,
       success: function (data) {

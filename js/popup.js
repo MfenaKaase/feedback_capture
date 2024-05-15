@@ -59,12 +59,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let tabs = document.querySelectorAll('.nav-link');
 
-    tabs.forEach(function(tab) {
-        tab.addEventListener('click', function() {
+    tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
             let target = tab.getAttribute('data-bs-target');
 
             // Remove active class from all tabs
-            tabs.forEach(function(t) {
+            tabs.forEach(function (t) {
                 t.classList.remove('active');
             });
 
@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Hide all tab content
             let tabContents = document.querySelectorAll('.tab-pane');
-            tabContents.forEach(function(content) {
+            tabContents.forEach(function (content) {
                 content.classList.remove('show', 'active');
             });
 
@@ -94,22 +94,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let cohortBar = document.getElementById('cohort-bar');
     let cohortInput = document.getElementById('cohort-input');
+    let passwordInput = document.getElementById('password');
     let saveButton = document.getElementById('save-cohort');
     let message = document.getElementById('message');
     let copyMessage = document.getElementById('copy-message');
 
-    fetch(`https://feedback.grayfinancial.site/fetch_cohorts.php`)
-      .then(response => response.json())
-      .then(cohorts => {
-        populateCohortsList(cohorts);
-      })
-      .catch(error => {
-          console.log('error', error)
-      });
-    
+    fetch(`http://localhost:8000/fetch_cohorts.php`)
+        .then(response => response.json())
+        .then(cohorts => {
+            populateCohortsList(cohorts);
+        })
+        .catch(error => {
+            console.log('error', error)
+        });
+
     function populateCohortsList(cohorts) {
         let cohortsList = document.getElementById('cohorts');
-        cohortsList.innerHTML = ''; 
+        cohortsList.innerHTML = '';
         cohorts.forEach(cohort => {
             let listItem = document.createElement('li');
             listItem.setAttribute('id', cohort.id);
@@ -131,14 +132,74 @@ document.addEventListener('DOMContentLoaded', function () {
             })
         })
     }
-    
+
     saveButton.addEventListener('click', function () {
-        
+        message.textContent = "saving...";
+        let spinner = document.createElement('div');
+        spinner.classList.add('spinner-border', 'text-light');
+        spinner.setAttribute('role', 'status');
+
+        // Append spinner to the saveButton
+        saveButton.appendChild(spinner);
+
+        // Disable the saveButton
+        saveButton.setAttribute('disabled', true);
+
+        // Get the value of the cohortInput and trim any whitespace
+        let newCohort = cohortInput.value.trim().split(' ').join('_');
+        let password = passwordInput.value
+        if (newCohort !== '') {
+
+            postCohort("http://localhost:8000/add_cohort.php", { cohort: newCohort, password: password })
+            .then((data) => {
+                console.log(data);
+                if (data.response == 'Wrong Password!') {
+                    message.textContent = data.response;
+                    
+                } else {
+                    console.log(data); 
+                    message.textContent = data.response;
+                    populateCohortsList(data.data)
+                }
+
+                spinner.remove();
+                
+            })
+            .catch(err => {
+                console.log(err)
+                spinner.remove();
+                message.textContent = "something went wrong! check your internet"
+            });
+
+            
+            spinner.remove();
+            saveButton.removeAttribute('disabled');
+        } else {
+            spinner.remove();
+            // After saving is complete, remove the spinner and enable the saveButton
+            saveButton.removeAttribute('disabled');
+            message.textContent = "cohort name should'nt be empty!"
+        }
     });
-    
-    
-    
 })
+
+async function postCohort(url = "", data = {}) {
+    // Default options are marked with *
+    const response = await fetch(url, {
+        method: "POST", // *GET, POST, PUT, DELETE, etc.
+        mode: "cors", // no-cors, *cors, same-origin
+        cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
+        credentials: "same-origin", // include, *same-origin, omit
+        headers: {
+            "Content-Type": "application/json",
+            // 'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        redirect: "follow", // manual, *follow, error
+        referrerPolicy: "no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+        body: JSON.stringify(data), // body data type must match "Content-Type" header
+    });
+    return response.json(); // parses JSON response into native JavaScript objects
+}
 
 
 

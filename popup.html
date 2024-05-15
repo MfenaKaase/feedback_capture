@@ -25,7 +25,7 @@
 
     #cohort-bar {
       /* display: none; */
-      background-color: #f0f0f0;
+      background-color: #f0f0f081;
       padding: 10px;
       border: 1px solid #ccc;
       margin-bottom: 10px;
@@ -34,6 +34,7 @@
     button#save-cohort {
       display: flex;
       align-items: center;
+      justify-content: center;
     }
   </style>
 </head>
@@ -54,7 +55,7 @@
               </li>
 
               <li class="nav-item" role="presentation">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile-edit" aria-selected="false" role="tab" tabindex="-1">Login</button>
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile-edit" aria-selected="false" role="tab" tabindex="-1">Add Cohort</button>
               </li>
 
               <li class="nav-item" role="presentation">
@@ -67,7 +68,7 @@
               <div class="tab-pane fade profile-overview active show" id="profile-overview" role="tabpanel">
                 <h2 class="card-title">Feedback Capture - Search Results</h2>
             
-                <div id="feedbackResultsContainer">
+                <div id="feedbackResultsContainer" class="shadow-lg">
                   Nothing To See Here!
                 </div>
 
@@ -75,12 +76,19 @@
 
               <div class="tab-pane fade profile-edit pt-3" id="profile-edit" role="tabpanel">
 
-                <h2>Login</h2>
-                <div id="cohort-bar">
-                  <p>Login to Cohort</p>
-                 <div class="d-flex">
-                  <input type="text" id="cohort-input" placeholder="Enter cohort ID">
-                  <button id="save-cohort" class="btn btn-success">Login</button>
+                <h2>Add Cohort</h2>
+                <div id="cohort-bar" class="shadow-lg rounded">
+                 <div >
+                  <div class="mb-2">
+                    <label for="cohort-input">Cohort Name</label>
+                    <input type="text" id="cohort-input" placeholder="Enter cohort name" name="cohort-input" class="form-control">
+                  </div>
+                  <div class="mb-2">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter your password" class="form-control">
+                  </div>
+                  
+                  <button id="save-cohort" class="btn btn-dark w-100 text-center">Add</button>
                  </div>
                  <p id="message"></p>
                 </div>
@@ -89,8 +97,8 @@
 
               <div class="tab-pane fade pt-3" id="profile-settings" role="tabpanel">
 
-                    <h2>Cohorts - Coming Soon</h2>
-                    <ul id="cohorts" class="list-group">
+                    <h2>Cohorts</h2>
+                    <ul id="cohorts" class="list-group shadow-lg">
 
                     </ul>
                     <p id="copy-message" style="color: rgb(103, 185, 103);"></p>
