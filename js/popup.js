@@ -37,10 +37,10 @@ const displaySearchResults = (el, docs) => {
 
         htmlString = `<div class="list-group">`;
         uniqueDocs.forEach(doc => {
-            htmlString += `<div class="list-group-item list-group-item-action flex-column align-items-start">
+            htmlString += `<div class="list-group-item list-group-item-action flex-column align-items-start" data-bs-toggle="tooltip" data-bs-html="true" title="${doc.leading_paragraph}">
                 <div class="d-flex w-100 justify-content-between">
                 <h5 class="mb-1">${doc.page_title}</h5>
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                <span class="position-absolute top-0 start-10 translate-middle badge rounded-pill bg-danger">
                 <i class='bx bx-star'></i>
                 ${doc.aggregatedWeight.toFixed(2)}
                 </span>
@@ -56,8 +56,138 @@ const displaySearchResults = (el, docs) => {
 
 
 document.addEventListener('DOMContentLoaded', function () {
+    const loginTab = document.querySelector('button[data-bs-target="#profile-settings"]');
+    const signupTab = document.querySelector('button[data-bs-target="#profile-edit"]');
+    const resultsTab = document.querySelector('button[data-bs-target="#profile-overview"]');
+    const dataTab = document.querySelector('button[data-bs-target="#download-options"]');
+    const logoutButton = document.getElementById('logoutButton');
+    const signupForm = document.getElementById('signup-form')
+    const submitBtn = document.querySelector('.submit-btn');
+    const submitBtn2 = document.querySelector('.submit-btn-2');
+
+    chrome.storage.local.get(['authToken'], function (result) {
+        const isAuthenticated = !!result.authToken;
+
+        if (isAuthenticated) {
+            // Hide login and signup tabs
+            loginTab.style.display = 'none';
+            signupTab.style.display = 'none';
+
+            // Show results, download data tabs, and logout button
+            resultsTab.style.display = 'block';
+            dataTab.style.display = 'block';
+            logoutButton.style.display = 'block';
+        } else {
+            // Show login and signup tabs
+            loginTab.style.display = 'block';
+            signupTab.style.display = 'block';
+
+            // Hide results, download data tabs, and logout button
+            resultsTab.style.display = 'none';
+            dataTab.style.display = 'none';
+            logoutButton.style.display = 'none';
+        }
+
+        // Logout functionality
+        logoutButton.addEventListener('click', () => {
+            chrome.storage.local.remove('authToken', () => {
+                console.log('Logged out successfully');
+                // Refresh the UI after logout
+                loginTab.style.display = 'block';
+                signupTab.style.display = 'block';
+                resultsTab.style.display = 'none';
+                dataTab.style.display = 'none';
+                logoutButton.style.display = 'none';
+            });
+        });
+    });
 
     let tabs = document.querySelectorAll('.nav-link');
+
+    const loginForm = document.getElementById('login-form');
+
+    loginForm.addEventListener('submit', (evt) => {
+        submitBtn.classList.add('loading');
+        evt.preventDefault();
+        login(loginForm[0].value, loginForm[1].value);
+
+    })
+
+    signupForm.addEventListener('submit', evt => {
+        evt.preventDefault();
+        // Show spinner
+        submitBtn2.classList.add('loading');
+        const formdata = new FormData();
+        formdata.append("name", signupForm[0].value);
+        formdata.append("email", signupForm[1].value);
+        formdata.append("password", signupForm[2].value);
+        formdata.append("password_confirmation", signupForm[3].value);
+
+        const requestOptions = {
+            method: "POST",
+            body: formdata,
+            redirect: "follow"
+        };
+
+        fetch("http://localhost:8000/api/users", requestOptions)
+            .then((response) => response.json())
+            .then((result) => {
+                console.log(result);
+                submitBtn2.classList.remove('loading');
+            })
+            .catch((error) => {
+                console.error(error);
+                submitBtn2.classList.remove('loading');
+            });
+    })
+
+    // download data 
+    document.getElementById('downloadButton').addEventListener('click', () => {
+        // Retrieve the authToken from chrome.storage.local
+        chrome.storage.local.get(['authToken'], (result) => {
+            const authToken = result.authToken;
+
+            // Ensure the authToken exists
+            if (!authToken) {
+                console.error('Auth token not found.');
+                return;
+            }
+
+            // Send a request to the backend with the authToken
+            fetch('http://localhost:8000/api/export-data', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${authToken}`,
+                    "Content-Type": "application/json"
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.blob(); // Parse the response as a blob (binary data)
+                })
+                .then(blob => {
+                    // Create a URL for the blob
+                    const downloadUrl = URL.createObjectURL(blob);
+
+                    // Create an invisible anchor element and trigger the download
+                    const anchor = document.createElement('a');
+                    anchor.href = downloadUrl;
+                    anchor.download = 'data.csv'; // Filename for the download
+                    document.body.appendChild(anchor);
+                    anchor.click();
+
+                    // Cleanup
+                    document.body.removeChild(anchor);
+                    URL.revokeObjectURL(downloadUrl); // Revoke the object URL to free up memory
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        });
+    });
+
 
     tabs.forEach(function (tab) {
         tab.addEventListener('click', function () {
@@ -92,114 +222,56 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    let cohortBar = document.getElementById('cohort-bar');
-    let cohortInput = document.getElementById('cohort-input');
-    let passwordInput = document.getElementById('password');
-    let saveButton = document.getElementById('save-cohort');
-    let message = document.getElementById('message');
-    let copyMessage = document.getElementById('copy-message');
+    async function login(email, password) {
+        const url = 'http://localhost:8000/api/login'; // Replace with your actual login URL
 
-    fetch(`http://localhost:8000/fetch_cohorts.php`)
-        .then(response => response.json())
-        .then(cohorts => {
-            populateCohortsList(cohorts);
-        })
-        .catch(error => {
-            console.log('error', error)
-        });
+        const formdata = new FormData();
+        formdata.append("email", email);
+        formdata.append("password", password);
 
-    function populateCohortsList(cohorts) {
-        let cohortsList = document.getElementById('cohorts');
-        cohortsList.innerHTML = '';
-        cohorts.forEach(cohort => {
-            let listItem = document.createElement('li');
-            listItem.setAttribute('id', cohort.id);
-            listItem.classList.add('list-group-item');
-            listItem.classList.add('d-flex');
-            listItem.classList.add('justify-content-between');
-            listItem.classList.add('align-items-center');
-            listItem.innerHTML = ` <p>${cohort.name}</p>
-            <button class='btn btn-dark bx bx-door-open' style="cursor:pointer" id="${cohort.name}">Login</buttob>`;
-            cohortsList.appendChild(listItem);
-        });
-
-        let LoginBtns = document.querySelectorAll('.bx-door-open');
-        LoginBtns.forEach(LoginBtn => {
-            LoginBtn.addEventListener('click', evt => {
-                let cohort = evt.target.id;
-                chrome.storage.local.set({ cohort: cohort });
-                copyMessage.innerText = `Login successful! ${cohort}`
-            })
-        })
-    }
-
-    saveButton.addEventListener('click', function () {
-        message.textContent = "saving...";
-        let spinner = document.createElement('div');
-        spinner.classList.add('spinner-border', 'text-light');
-        spinner.setAttribute('role', 'status');
-
-        // Append spinner to the saveButton
-        saveButton.appendChild(spinner);
-
-        // Disable the saveButton
-        saveButton.setAttribute('disabled', true);
-
-        // Get the value of the cohortInput and trim any whitespace
-        let newCohort = cohortInput.value.trim().split(' ').join('_');
-        let password = passwordInput.value
-        if (newCohort !== '') {
-
-            postCohort("http://localhost:8000/add_cohort.php", { cohort: newCohort, password: password })
-            .then((data) => {
-                console.log(data);
-                if (data.response == 'Wrong Password!') {
-                    message.textContent = data.response;
-                    
-                } else {
-                    console.log(data); 
-                    message.textContent = data.response;
-                    populateCohortsList(data.data)
-                }
-
-                spinner.remove();
-                
-            })
-            .catch(err => {
-                console.log(err)
-                spinner.remove();
-                message.textContent = "something went wrong! check your internet"
+        try {
+            // Send a POST request with the email and password
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formdata,
             });
 
-            
-            spinner.remove();
-            saveButton.removeAttribute('disabled');
-        } else {
-            spinner.remove();
-            // After saving is complete, remove the spinner and enable the saveButton
-            saveButton.removeAttribute('disabled');
-            message.textContent = "cohort name should'nt be empty!"
+            // Check if the request was successful
+            if (!response.ok) {
+                throw new Error('Login failed');
+            }
+
+            // Parse the JSON response
+            const result = await response.json();
+
+            console.log(result);
+            // Assuming the token is returned in the response
+            const token = result.token;
+
+            chrome.storage.local.set({ authToken: token }, () => {
+                console.log('Value saved');
+            });
+
+            loginTab.style.display = 'none';
+            signupTab.style.display = 'none';
+            resultsTab.style.display = 'block';
+            dataTab.style.display = 'block';
+            logoutButton.style.display = 'block';
+            submitBtn.classList.remove('loading');
+            console.log('Login successful, token stored in sessionStorage');
+            document.querySelector('.message').innerHTML = `Login successful, Switch to results tab`
+
+        } catch (error) {
+            submitBtn.classList.remove('loading');
+            console.error('Error during login:', error);
         }
-    });
+    }
 })
 
-async function postCohort(url = "", data = {}) {
-    // Default options are marked with *
-    const response = await fetch(url, {
-        method: "POST", // *GET, POST, PUT, DELETE, etc.
-        mode: "cors", // no-cors, *cors, same-origin
-        cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
-        credentials: "same-origin", // include, *same-origin, omit
-        headers: {
-            "Content-Type": "application/json",
-            // 'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        redirect: "follow", // manual, *follow, error
-        referrerPolicy: "no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-        body: JSON.stringify(data), // body data type must match "Content-Type" header
-    });
-    return response.json(); // parses JSON response into native JavaScript objects
-}
+
+
+
+
 
 
 

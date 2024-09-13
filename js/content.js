@@ -1,4 +1,4 @@
-let search_results = {}
+let search_results = {};
 //Url handler
 function getUrlVars(href) {
   var vars = [], hash;
@@ -12,15 +12,15 @@ function getUrlVars(href) {
 }
 
 chrome.runtime.onMessage.addListener(
-  function(request, sender, sendResponse) {
-   
-      if(request["type"] == 'msg_from_popup'){
-          console.log("msg receive from popup");
-        sendResponse(search_results);
-         
-      }
-      return true; 
-      
+  function (request, sender, sendResponse) {
+
+    if (request["type"] == 'msg_from_popup') {
+      console.log("msg receive from popup");
+      sendResponse(search_results);
+
+    }
+    return true;
+
   }
 );
 
@@ -50,16 +50,16 @@ var saveCaptureData = {
     this.getIP();
     this.getUserID();
     this.getPageTitle();
+    this.getContent();
     this.getLeadingParagraph();
-    this.getCohort();
-
+    
     //Retrieve search query from storage
     chrome.storage.sync.get(["searchQuery"], function (result) {
       saveCaptureData.search_query = result.searchQuery;
       console.log(
         "Search query that brought up this page: " + saveCaptureData.search_query
       );
-      chrome.storage.sync.set({ searchQuery: '' }, function () { });
+      // chrome.storage.sync.set({ searchQuery: '' }, function () { });
     });
 
     //Listen for bookmark and getIP events from background script.
@@ -85,34 +85,41 @@ var saveCaptureData = {
     query = String(getUrlVars(lastUrl).q);
     r = query.split('+').join(' ');
 
-    var formdata = new FormData();
 
-    var requestOptions = {
-      method: 'GET',
-      redirect: 'follow'
-    };
+    chrome.storage.local.get(['authToken'], function (result) {
+      let authToken = result.authToken;
 
-    chrome.storage.local.get(['cohort'], function(result) {
-      let cohort = result.cohort;
-      
-      console.log(cohort);
+      const myHeaders = new Headers();
+      myHeaders.append('Authorization', `Bearer ${authToken}`);
 
-      fetch(`http://localhost:8000/fetch_results.php/?query=${query}&cohort=${cohort}`, requestOptions)
-  .then(response => {
-    // Log the raw response before parsing JSON
-    console.log('Raw response:', response);
-    return response.json();
-  })
-  .then(results => {
-    // Log the parsed JSON data
-    console.log('Parsed JSON:', results);
-    // Access object properties as needed
-    search_results = results.response;
-    console.log('Search results:', search_results);
-  })
-  .catch(error => {
-    console.log('Error:', error);
-  });
+      var requestOptions = {
+        method: 'GET',
+        redirect: 'follow',
+        headers: myHeaders
+      };
+
+      console.log(query);
+      console.log(authToken);
+
+      fetch(`http://localhost:8000/api/implicit-feedback?query=${query}`, requestOptions)
+        .then(response => {
+          // Log the raw response before parsing JSON
+          console.log(response);
+          return response.json();
+        })
+        .then(results => {
+          // Log the parsed JSON data
+          console.log('Parsed JSON:', results);
+          // Access object properties as needed
+          search_results = results.response;
+          console.log('Search results:', search_results);
+        })
+        .catch(error => {
+          console.log('Error:', error);
+          chrome.storage.local.remove('authToken', () => {
+            console.log("user session invalidated");
+        });
+        });
 
     });
 
@@ -133,7 +140,7 @@ var saveCaptureData = {
       // console.log("Got here.");
       if (event.ctrlKey && event.key == "s") {
         ++saveCaptureData.page_saved;
-        // console.log('Page saved, record taken.');
+        console.log('Page saved, record taken.');
       }
     });
   },
@@ -141,9 +148,9 @@ var saveCaptureData = {
   pageSelectionEvent: function () {
     // onselectionchange version
     document.onselectionchange = () => {
-      // console.log("selection made on page " + document.getSelection());
+      console.log("selection made on page " + document.getSelection());
       ++saveCaptureData.total_text_selections;
-      // console.log(saveCaptureData.total_text_selections + " selections made.");
+      console.log(saveCaptureData.total_text_selections + " selections made.");
     };
   },
 
@@ -161,9 +168,9 @@ var saveCaptureData = {
 
       // if ((saveCaptureData.loadedTime > 0 || dt >= 1000) && saveCaptureData.search_query) {
       //   // save here as null (don't have to save because it's default)
-        
+
       // }
-      
+
       saveCaptureData.user_rating = 1;
       saveCaptureData.save();
       e.returnValue = "";
@@ -293,33 +300,41 @@ var saveCaptureData = {
   },
 
   getUserID: function () {
-    chrome.storage.local.get(["implicit_feedback_ID"]).then((result) => {
-      // console.log(result.implicit_feedback_ID);
-      if (!result.implicit_feedback_ID) {
-        let userID = randomString();
-        chrome.storage.local.set({ implicit_feedback_ID: userID }).then(() => {
-          // console.log("Value is set");
-          saveCaptureData.userID = userID;
+    chrome.storage.local.get(["authToken"]).then((result) => {
+      if (!result.authToken) {
+        console.error("No auth token found in storage.");
+        return;
+      }
+      saveCaptureData.token = result.authToken;
+      fetch("http://localhost:8000/api/user", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${result.authToken}`,
+          "Content-Type": "application/json"
+        }
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data && data.id) {
+            chrome.storage.local.set({ implicit_feedback_ID: data.id }).then(() => {
+              saveCaptureData.userID = data.id;
+              console.log("User ID is set to: " + data.id);
+            });
+          } else {
+            console.error("Failed to fetch user ID.");
+          }
+        })
+        .catch(error => {
+          console.error("There was a problem with the fetch operation:", error);
+          chrome.storage.local.remove('authToken', () => {
+            console.log("user session invalidated");
         });
-      } else {
-        // console.log("Value currently is " + result.implicit_feedback_ID);
-        saveCaptureData.userID = result.implicit_feedback_ID;
-      }
-
-    });
-  },
-
-  getCohort: function () {
-    chrome.storage.local.get(["cohort"]).then((result) => {
-      // console.log(result.implicit_feedback_ID);
-      if (result.cohort) {
-        console.log("Value currently is " + result.cohort);
-        saveCaptureData.cohort = result.cohort;
-      } else {
-        console.log('No cohort found');
-        console.log(result);
-      }
-
+        });
     });
   },
 
@@ -327,14 +342,20 @@ var saveCaptureData = {
     saveCaptureData.pageTitle = document.title;
   },
 
+  getContent: function () {
+    saveCaptureData.content = document.body.innerText;
+    console.log(saveCaptureData.content);
+  },
   getLeadingParagraph: async function () {
+
     let paragraphs = document.querySelectorAll('body p');
+
     let meaningfulParagraph = await findMeaningfulParagraph(paragraphs);
 
-    if (meaningfulParagraph) {
+    if (paragraphs) {
       saveCaptureData.leadingParagraph = meaningfulParagraph;
     } else {
-      // console.log("No meaningful paragraph found.");
+      console.log("No meaningful paragraph found.");
     }
 
   },
@@ -367,25 +388,29 @@ var saveCaptureData = {
       user_ID: this.userID,
       pageTitle: this.pageTitle,
       leadingParagraph: this.leadingParagraph,
-      cohort: this.cohort
+      cohort: this.cohort,
+      content: this.content,
+      token: this.token
     };
 
     console.log(data);
-    // navigator.sendBeacon("https://grayfinancial.site/action.php", data);
-
+    // chrome.runtime.sendMessage({type: 'save_data', payload: data});
     $.ajax({
       type: "POST",
-      url: "http://localhost:8000/action.php",
+      url: "http://localhost:8000/api/implicit-feedback",
       dataType: "json",
       data: data,
+      headers: {
+        Authorization: `Bearer ${this.token}`
+      },
       success: function (data) {
         if (data.success == true) {
-          // console.log("Captured user activity saved.");
+          console.log("Captured user activity saved.");
         }
       },
       error: function (xhr, status, error) {
         var errorMessage = xhr.status + ": " + xhr.statusText;
-        // console.log(errorMessage);
+        console.log(errorMessage);
       }
     });
   },
@@ -417,33 +442,18 @@ var saveCaptureData = {
   userID: '',
   pageTitle: '',
   leadingParagraph: '',
-  cohort: ''
+  cohort: '',
+  token: '',
+  content: ''
 };
 
-const excludedDomains = /(google|facebook|twitter|localhost|chat.openai|msgoba|35.221.213.87|namecheap)/i;
+const excludedDomains = /(facebook|twitter|localhost|chat\.openai|msgoba|35\.221\.213\.87|namecheap|^https?:\/\/(www\.)?google\.com)/i;
 
 if (excludedDomains.test(window.location.href)) {
-  // console.log("capture wont work here.");
+  // console.log("capture won't work here.");
   saveCaptureData.getSearchQuery();
 } else {
   saveCaptureData.init();
-}
-
-function randomString() {
-  //initialize a variable having alpha-numeric characters  
-  var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
-
-  //specify the length for the new string to be generated  
-  var string_length = 8;
-  var randomstring = '';
-
-  //put a loop to select a character randomly in each iteration  
-  for (var i = 0; i < string_length; i++) {
-    var rnum = Math.floor(Math.random() * chars.length);
-    randomstring += chars.substring(rnum, rnum + 1);
-  }
-  //display the generated string   
-  return randomstring;
 }
 
 async function findMeaningfulParagraph(paragraphs) {

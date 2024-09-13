@@ -18,12 +18,12 @@
       margin: auto;
     }
 
-    button {
+    /* button {
         background-color: rgba(128, 255, 0, 0.699);
         cursor: pointer;
-    }
+    } */
 
-    #cohort-bar {
+    .cohort-bar {
       /* display: none; */
       background-color: #f0f0f081;
       padding: 10px;
@@ -36,6 +36,19 @@
       align-items: center;
       justify-content: center;
     }
+
+    .spinner-border {
+    display: none;
+    }
+
+    .submit-btn.loading .spinner-border {
+        display: inline-block;
+    }
+
+    .submit-btn-2.loading .spinner-border {
+        display: inline-block;
+    }
+
   </style>
 </head>
 <body>
@@ -55,18 +68,23 @@
               </li>
 
               <li class="nav-item" role="presentation">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile-edit" aria-selected="false" role="tab" tabindex="-1">Add Cohort</button>
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile-edit" aria-selected="false" role="tab" tabindex="-1">Create Account</button>
               </li>
 
               <li class="nav-item" role="presentation">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile-settings" aria-selected="false" role="tab" tabindex="-1">Cohorts</button>
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile-settings" aria-selected="false" role="tab" tabindex="-1">Login</button>
               </li>
 
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#download-options" aria-selected="false" role="tab" tabindex="-1">Data</button>
+              </li>
+
+              <button id="logoutButton" class="btn btn-danger btn-sm mx-2">Logout</button>
             </ul>
             <div class="tab-content pt-2">
 
               <div class="tab-pane fade profile-overview active show" id="profile-overview" role="tabpanel">
-                <h2 class="card-title">Feedback Capture - Search Results</h2>
+                <h2 class="card-title">Results</h2>
             
                 <div id="feedbackResultsContainer" class="shadow-lg">
                   Nothing To See Here!
@@ -76,47 +94,79 @@
 
               <div class="tab-pane fade profile-edit pt-3" id="profile-edit" role="tabpanel">
 
-                <h2>Add Cohort</h2>
-                <div id="cohort-bar" class="shadow-lg rounded">
+                <h2>Create Account</h2>
+                <form id="signup-form" class="shadow-lg rounded text-start cohort-bar">
                  <div >
                   <div class="mb-2">
-                    <label for="cohort-input">Cohort Name</label>
-                    <input type="text" id="cohort-input" placeholder="Enter cohort name" name="cohort-input" class="form-control">
+                    <label for="cohort-input">Full Name</label>
+                    <input type="text" id="cohort-input" placeholder="Enter Full Name" name="cohort-input" class="form-control">
+                  </div>
+                  <div class="mb-2">
+                    <label for="cohort-input">Email</label>
+                    <input type="text" id="cohort-input" placeholder="Enter Email" name="cohort-input" class="form-control">
                   </div>
                   <div class="mb-2">
                     <label for="password">Password</label>
                     <input type="password" id="password" placeholder="Enter your password" class="form-control">
                   </div>
+                  <div class="mb-2">
+                    <label for="password_confirmation">Password</label>
+                    <input type="password" id="password_confirmation" placeholder="Enter your password" class="form-control">
+                  </div>
                   
-                  <button id="save-cohort" class="btn btn-dark w-100 text-center">Add</button>
+                  <button id="save-cohort" class="btn btn-dark w-100 text-center submit-btn-2">Sign Up 
+                    <span class="spinner-border spinner-border-sm text-light" role="status" aria-hidden="true"></span>
+                    </button>
                  </div>
                  <p id="message"></p>
-                </div>
+                </form>
 
               </div>
 
               <div class="tab-pane fade pt-3" id="profile-settings" role="tabpanel">
 
-                    <h2>Cohorts</h2>
-                    <ul id="cohorts" class="list-group shadow-lg">
+                <h2>Login</h2>
+                <form id="login-form" class="shadow-lg rounded text-start cohort-bar" method="post">
+                 <div >
+                  <div class="mb-2">
+                    <label for="login-email">Email</label>
+                    <input type="text" id="login-email" placeholder="Enter Email" name="login-email" class="form-control">
+                  </div>
+                  <div class="mb-2">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" placeholder="Enter your password" class="form-control">
+                  </div>
+  
+                  <button id="save-cohort" type="submit" class="btn btn-dark w-100 text-center submit-btn">Login 
+                    <span class="spinner-border spinner-border-sm text-light" role="status" aria-hidden="true"></span>
+                    </button>
+                 </div>
+                 <p id="message"></p>
+                </form>
 
-                    </ul>
-                    <p id="copy-message" style="color: rgb(103, 185, 103);"></p>
+              </div>
+
+              <div class="tab-content pt-2">
+
+                <div class="tab-pane fade download-options active show" id="download-options" role="tabpanel">
+                  <button id="downloadButton" class="btn btn-sm btn-outline-dark mx-2">Download Data</button>
+                </div>
               </div>
 
             </div>
+
+
             <!-- End Bordered Tabs -->
 
           </div>
         </div>
-
+        <p class="message"></p>
       </div>
     </div>
    
   </div>
 
 <script src="">
-  // popup.js
 
 document.addEventListener('DOMContentLoaded', function() {
     chrome.runtime.sendMessage({ popupOpened: true });
