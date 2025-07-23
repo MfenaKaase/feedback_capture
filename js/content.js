@@ -1,5 +1,6 @@
 let search_results = {};
-//Url handler
+
+// URL handler
 function getUrlVars(href) {
   var vars = [], hash;
   var hashes = href.slice(href.indexOf("?") + 1).split("&");
@@ -9,6 +10,17 @@ function getUrlVars(href) {
     vars[hash[0]] = hash[1];
   }
   return vars;
+
+
+
+
+
+
+
+
+
+
+    
 }
 
 chrome.runtime.onMessage.addListener(
@@ -24,21 +36,45 @@ chrome.runtime.onMessage.addListener(
   }
 );
 
-/*
- *Save Capture function
- **
- */
+// Save capture data object
 var saveCaptureData = {
-  //timer id
-  timeIntervalID: "",
+  timeIntervalID: null,
+  active_time_counter: 0,
+  total_user_clicks: 0,
+  total_mouse_movement_x: 0,
+  total_mouse_movement_y: 0,
+  total_user_scroll: 0,
+  total_key_stroke: 0,
+  total_copy: 0,
+  total_text_selections: 0,
+  bookmarked: 0,
+  printed_document: 0,
+  page_saved: 0,
+  total_mouse_distance: 0,
+  total_mouse_speed: 0,
+  average_mouse_speed: 0,
+  total_active_time: 0,
+  url: window.location.href,
+  pageTitle: "",
+  leadingParagraph: "",
+  content: "",
+  search_query: "",
+  userIP: "",
+  userID: "12",
+  user_rating: 0,
+  cohort: "",
+  token: "",
+  openTimeStamp: 0,
+  closeTimeStamp: 0,
+  velocity_time_count: 0,
+
   init: function () {
     this.loadedTime = Date.now();
     this.newTime = new Date();
     this.openTimeStamp = Math.floor(this.newTime.getTime() / 1000);
     console.log("The time loading is: " + this.openTimeStamp);
     this.setCloseEvent();
-    //start counter on page load
-    saveCaptureData.startTimeCount();
+    this.startTimeCount();
     this.monitorKeyPress();
     this.monitorClicks();
     this.monitorScroll();
@@ -52,261 +88,219 @@ var saveCaptureData = {
     this.getPageTitle();
     this.getContent();
     this.getLeadingParagraph();
-    
-    //Retrieve search query from storage
+
     chrome.storage.sync.get(["searchQuery"], function (result) {
-      saveCaptureData.search_query = result.searchQuery;
-      console.log(
-        "Search query that brought up this page: " + saveCaptureData.search_query
-      );
-      // chrome.storage.sync.set({ searchQuery: '' }, function () { });
+      saveCaptureData.search_query = result.searchQuery || "";
+      console.log("Search query that brought up this page: " + saveCaptureData.search_query);
     });
 
-    //Listen for bookmark and getIP events from background script.
     chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       if (request.type === 'bookmark') {
-        if (request.bookmark == 1) {
-          saveCaptureData.bookmarked += request.bookmark;
-          // console.log("Page bookmarked.");
+        if (request.bookmark === 1) {
+          saveCaptureData.bookmarked += 1;
+          console.log("Bookmark event recorded. Total bookmarks: " + saveCaptureData.bookmarked);
+        } else {
+          console.warn("Invalid bookmark value received:", request.bookmark);
         }
-      } else {
-        if (request.bookmark == 1) {
-          saveCaptureData.userIP = request.IP;
-          // console.log("IP address recorded!");
-        }
+      } else if (request.IP) {
+        saveCaptureData.userIP = request.IP;
+        console.log("IP received from background:", request.IP);
+      } else if (request.type === 'msg_from_popup') {
+        console.log("Message received from popup");
+        sendResponse(search_results);
       }
-      sendResponse({ farewell: "goodbye" });
+      return true;
     });
   },
 
   getSearchQuery: function () {
-    lastUrl = window.location.href;
+    let lastUrl = window.location.href;
     console.log("URL: " + lastUrl);
-    query = String(getUrlVars(lastUrl).q);
-    r = query.split('+').join(' ');
-
+    let query = String(getUrlVars(lastUrl).q || "");
+    let r = query.split('+').join(' ');
 
     chrome.storage.local.get(['authToken'], function (result) {
-      let authToken = result.authToken;
+      let authToken = result.authToken || "";
+      console.log("Auth token for search query:", authToken);
 
       const myHeaders = new Headers();
-      myHeaders.append('Authorization', `Bearer ${authToken}`);
+      if (authToken) {
+        myHeaders.append('Authorization', `Bearer ${authToken}`);
+      }
 
-      var requestOptions = {
+      fetch(`https://feedback.sekimbi.com/api/implicit-feedback?query=${encodeURIComponent(query)}`, {
         method: 'GET',
-        redirect: 'follow',
-        headers: myHeaders
-      };
-
-      console.log(query);
-      console.log(authToken);
-
-      fetch(`http://localhost:8000/api/implicit-feedback?query=${query}`, requestOptions)
+        headers: myHeaders,
+        redirect: 'follow'
+      })
         .then(response => {
-          // Log the raw response before parsing JSON
-          console.log(response);
+          console.log("Search query response status:", response.status);
+          if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
           return response.json();
         })
         .then(results => {
-          // Log the parsed JSON data
           console.log('Parsed JSON:', results);
-          // Access object properties as needed
-          search_results = results.response;
+          search_results = results.response || {};
           console.log('Search results:', search_results);
         })
         .catch(error => {
-          console.log('Error:', error);
-          chrome.storage.local.remove('authToken', () => {
-            console.log("user session invalidated");
-        });
+          console.error('Error fetching search results:', error);
+          search_results = {};
+          if (error.message.includes("403")) {
+            console.error("403 Forbidden: Check auth token or server CORS configuration.");
+          }
         });
 
-    });
-
-    chrome.storage.sync.set({ 'searchQuery': r }, function () {
-      console.log("Value is set to " + r);
+      chrome.storage.sync.set({ 'searchQuery': r }, function () {
+        console.log("Search query set to: " + r);
+      });
     });
   },
 
   userPrintEvents: function () {
-    window.addEventListener("afterprint", function (event) {
-      ++saveCaptureData.printed_document;
-      // console.log("This document just got printed. " + saveCaptureData.printed_document);
+    window.addEventListener("afterprint", function () {
+      saveCaptureData.printed_document += 1;
+      console.log("Print event count: " + saveCaptureData.printed_document);
     });
   },
 
   pageSaveEvent: function () {
     document.addEventListener("keydown", function (event) {
-      // console.log("Got here.");
-      if (event.ctrlKey && event.key == "s") {
-        ++saveCaptureData.page_saved;
-        console.log('Page saved, record taken.');
+      if ((event.ctrlKey || event.metaKey) && event.key === "s") {
+        event.preventDefault();
+        saveCaptureData.page_saved += 1;
+        console.log("Page save count: " + saveCaptureData.page_saved);
       }
     });
   },
 
   pageSelectionEvent: function () {
-    // onselectionchange version
-    document.onselectionchange = () => {
-      console.log("selection made on page " + document.getSelection());
-      ++saveCaptureData.total_text_selections;
-      console.log(saveCaptureData.total_text_selections + " selections made.");
-    };
-  },
-
-  setCloseEvent: function () {
-    //Window close listener
-    window.addEventListener("beforeunload", function (e) {
-      // If you prevent default behavior in Mozilla Firefox prompt will always be shown
-      e.preventDefault();
-      // Chrome requires returnValue to be set
-
-      var dt = Date.now();
-      var d = new Date();
-      saveCaptureData.closeTimeStamp = Math.floor(d.getTime() / 1000);
-      // console.log("The time at closing is: " + saveCaptureData.closeTimeStamp);
-
-      // if ((saveCaptureData.loadedTime > 0 || dt >= 1000) && saveCaptureData.search_query) {
-      //   // save here as null (don't have to save because it's default)
-
-      // }
-
-      saveCaptureData.user_rating = 1;
-      saveCaptureData.save();
-      e.returnValue = "";
+    document.addEventListener("selectionchange", () => {
+      let selection = window.getSelection().toString();
+      if (selection.length > 0) {
+        saveCaptureData.total_text_selections += 1;
+        console.log("Text selection count: " + saveCaptureData.total_text_selections);
+      }
     });
   },
 
+  setCloseEvent: function () {
+    window.addEventListener("beforeunload", async function (e) {
+      e.preventDefault();
+      saveCaptureData.stopTimeCount();
+      saveCaptureData.closeTimeStamp = Math.floor(Date.now() / 1000);
+      saveCaptureData.user_rating = 1;
+
+      try {
+        const success = await saveCaptureData.save();
+        if (!success) {
+          console.error("Data submission failed, triggering popup.");
+          await new Promise((resolve) => {
+            chrome.runtime.sendMessage(
+              { type: 'show_popup', data: saveCaptureData.getData() },
+              (response) => {
+                console.log("Popup message response:", response);
+                resolve();
+              }
+            );
+          });
+        }
+      } catch (error) {
+        console.error("Error in beforeunload handler:", error);
+      }
+      e.returnValue = "";
+    }, { capture: true });
+  },
+
   monitorKeyPress: function () {
-    $(parent.document).keypress(function () {
+    $(document).on("keypress", function () {
       saveCaptureData.total_key_stroke += 1;
+      console.log("Key stroke count: " + saveCaptureData.total_key_stroke);
     });
   },
 
   monitorClicks: function () {
-    $(parent.document).click(function () {
+    $(document).on("click", function () {
       saveCaptureData.total_user_clicks += 1;
+      console.log("Click count: " + saveCaptureData.total_user_clicks);
     });
   },
 
   monitorScroll: function () {
-    $(parent.document).scroll(function () {
+    $(document).on("scroll", function () {
       saveCaptureData.total_user_scroll += 1;
+      console.log("Scroll count: " + saveCaptureData.total_user_scroll);
     });
   },
 
   CopyPaste: function () {
-    $(document).ready(function () {
-      $(document).bind("copy", function () {
-        saveCaptureData.total_copy += 1;
-      });
+    $(document).on("copy", function () {
+      saveCaptureData.total_copy += 1;
+      console.log("Copy count: " + saveCaptureData.total_copy);
     });
   },
 
   monitorTabVisibility: function () {
-    var hidden = "hidden";
-
-    if (hidden in document) {
-      document.addEventListener("visibilitychange", this.onVisibilityChange);
-    } else if ((hidden = "mozHidden") in document) {
-      document.addEventListener("mozvisibilitychange", this.onVisibilityChange);
-    } else if ((hidden = "webkitHidden") in document) {
-      document.addEventListener(
-        "webkitvisibilitychange",
-        this.onVisibilityChange
-      );
-    } else if ((hidden = "msHidden") in document) {
-      document.addEventListener("msvisibilitychange", this.onVisibilityChange);
-    } else if ("onfocusin" in document) {
-      // IE 9 and lower:
-      document.onfocusin = document.onfocusout = this.onVisibilityChange;
-    } else {
-      // All others:
-      window.onpageshow = window.onpagehide = window.onfocus = window.onblur = this.onVisibilityChange;
-    }
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") {
+        saveCaptureData.stopTimeCount();
+      } else if (document.visibilityState === "visible") {
+        saveCaptureData.startTimeCount();
+      }
+    });
   },
 
-  onVisibilityChange: function (evt) {
-    evt = evt || window.event;
-
-    var v = "visible",
-      h = "hidden",
-      visiblilty = "",
-      evtMap = {
-        focus: v,
-        focusin: v,
-        pageshow: v,
-        blur: h,
-        focusout: h,
-        pagehide: h,
-      };
-
-    if (evt.type in evtMap) {
-      visiblilty = evtMap[evt.type];
-    } else {
-      visiblilty = this[h] ? "hidden" : "visible";
-    }
-
-    if (visiblilty == "hidden") {
-      //stop active time count
-      saveCaptureData.stopTimeCount();
-    } else {
-      //start time count
-      saveCaptureData.startTimeCount();
-    }
-  },
-
-  //stop timer
   stopTimeCount: function () {
-    clearInterval(saveCaptureData.timeIntervalID);
-    // console.log("cleared..");
+    if (this.timeIntervalID) {
+      clearInterval(this.timeIntervalID);
+      this.timeIntervalID = null;
+      console.log("Timer stopped.");
+    }
   },
 
-  //start timer
   startTimeCount: function () {
-    saveCaptureData.timeIntervalID = setInterval(function () {
-      saveCaptureData.active_time_counter++;
-      console.log(saveCaptureData.active_time_counter);
+    let startTime = Date.now();
+    this.timeIntervalID = setInterval(() => {
+      if (document.hasFocus()) {
+        this.active_time_counter = Math.floor((Date.now() - startTime) / 1000);
+      }
+      this.total_active_time = this.active_time_counter;
+      console.log("Active time: " + this.active_time_counter);
     }, 1000);
   },
 
-  getIP: async function () {
-    try {
-      const response = await fetch("https://api.hostip.info/get_html.php");
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const responseData = await response.text();
-      const hostipInfo = responseData.split("\n");
-
-      // console.log(hostipInfo);
-
-      for (let i = 0; i < hostipInfo.length; i++) {
-        const ipAddress = hostipInfo[i].split(":");
-        if (ipAddress[0] === "IP") {
-          let IP = ipAddress[1].trim();
-          saveCaptureData.userIP = IP;
-          return IP;
+  getIP: async function (retries = 3, delay = 1000) {
+    for (let i = 0; i < retries; i++) {
+      try {
+        if (!navigator.onLine) {
+          console.error("No network connection for IP fetch.");
+          return false;
         }
+        const response = await fetch("https://api.ipify.org?format=json", {
+          signal: AbortSignal.timeout(5000)
+        });
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        const data = await response.json();
+        this.userIP = data.ip;
+        console.log("IP address: " + data.ip);
+        return data.ip;
+      } catch (error) {
+        console.error(`IP fetch attempt ${i + 1} failed:`, error);
+        if (i < retries - 1) await new Promise(resolve => setTimeout(resolve, delay));
       }
-
-      return false;
-    } catch (error) {
-      // console.error("Error fetching IP:", error);
-      return false;
     }
+    console.error("All IP fetch attempts failed.");
+    return false;
   },
 
   getUserID: function () {
-    chrome.storage.local.get(["authToken"]).then((result) => {
+    chrome.storage.local.get(["authToken"], (result) => {
       if (!result.authToken) {
         console.error("No auth token found in storage.");
         return;
       }
-      saveCaptureData.token = result.authToken;
-      fetch("http://localhost:8000/api/user", {
+      this.token = result.authToken;
+      fetch("https://feedback.sekimbi.com/api/auth/user", {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${result.authToken}`,
@@ -314,56 +308,54 @@ var saveCaptureData = {
         }
       })
         .then(response => {
-          if (!response.ok) {
-            throw new Error("Network response was not ok");
-          }
+          if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
           return response.json();
         })
         .then(data => {
           if (data && data.id) {
-            chrome.storage.local.set({ implicit_feedback_ID: data.id }).then(() => {
-              saveCaptureData.userID = data.id;
-              console.log("User ID is set to: " + data.id);
+            chrome.storage.local.set({ implicit_feedback_ID: data.id }, () => {
+              this.userID = data.id;
+              console.log("User ID set to: " + data.id);
             });
           } else {
             console.error("Failed to fetch user ID.");
           }
         })
         .catch(error => {
-          console.error("There was a problem with the fetch operation:", error);
-          chrome.storage.local.remove('authToken', () => {
-            console.log("user session invalidated");
-        });
+          console.error("Error fetching user ID:", error);
+          if (error.message.includes("403")) {
+            console.error("403 Forbidden: Invalid or expired auth token.");
+            chrome.storage.local.remove('authToken', () => {
+              console.log("User session invalidated.");
+            });
+          }
         });
     });
   },
 
   getPageTitle: function () {
-    saveCaptureData.pageTitle = document.title;
+    this.pageTitle = document.title || "";
+    console.log("Page title: " + this.pageTitle);
   },
 
   getContent: function () {
-    saveCaptureData.content = document.body.innerText;
-    console.log(saveCaptureData.content);
+    this.content = document.body.innerText.trim().substring(0, 1000);
+    console.log("Content captured (first 1000 chars).");
   },
+
   getLeadingParagraph: async function () {
-
     let paragraphs = document.querySelectorAll('body p');
-
     let meaningfulParagraph = await findMeaningfulParagraph(paragraphs);
-
-    if (paragraphs) {
-      saveCaptureData.leadingParagraph = meaningfulParagraph;
+    if (meaningfulParagraph) {
+      this.leadingParagraph = meaningfulParagraph;
+      console.log("Leading paragraph captured.");
     } else {
       console.log("No meaningful paragraph found.");
     }
-
   },
 
-  //Save captured data
-  save: function () {
-    // console.log('data saving function was called.');
-    var data = {
+  getData: function () {
+    return {
       total_user_clicks: this.total_user_clicks,
       total_mouse_movement_x: this.total_mouse_movement_x,
       total_mouse_movement_y: this.total_mouse_movement_y,
@@ -392,68 +384,64 @@ var saveCaptureData = {
       content: this.content,
       token: this.token
     };
-
-    console.log(data);
-    // chrome.runtime.sendMessage({type: 'save_data', payload: data});
-    $.ajax({
-      type: "POST",
-      url: "http://localhost:8000/api/implicit-feedback",
-      dataType: "json",
-      data: data,
-      headers: {
-        Authorization: `Bearer ${this.token}`
-      },
-      success: function (data) {
-        if (data.success == true) {
-          console.log("Captured user activity saved.");
-        }
-      },
-      error: function (xhr, status, error) {
-        var errorMessage = xhr.status + ": " + xhr.statusText;
-        console.log(errorMessage);
-      }
-    });
   },
 
-  user_id: 0,
-  total_copy: 0,
-  userIP: '',
-  loadedTime: -1,
-  total_user_clicks: 0,
-  total_mouse_movement_x: 0,
-  total_mouse_movement_y: 0,
-  total_user_scroll: 0,
-  user_rating: 0,
-  total_key_stroke: 0,
-  total_active_time: 0,
-  active_time_counter: 0,
-  total_mouse_distance: 0,
-  total_mouse_speed: 0,
-  url: '',
-  openTimeStamp: 0,
-  closeTimeStamp: 0,
-  velocity_time_count: 0,
-  average_mouse_speed: 0,
-  total_text_selections: 0,
-  bookmarked: 0,
-  printed_document: 0,
-  page_saved: 0,
-  search_query: '',
-  userID: '',
-  pageTitle: '',
-  leadingParagraph: '',
-  cohort: '',
-  token: '',
-  content: ''
+  save: async function (retries = 3, delay = 1000) {
+    const data = this.getData();
+    console.log("Saving data:", data);
+
+    for (let i = 0; i < retries; i++) {
+      try {
+        if (!navigator.onLine) {
+          console.error("No network connection for data submission.");
+          await chrome.storage.local.set({ unsentData: data });
+          return false;
+        }
+
+        const response = await $.ajax({
+          type: "POST",
+          url: "https://feedback.sekimbi.com/api/implicit-feedback",
+          dataType: "json",
+          data: JSON.stringify(data),
+          contentType: "application/json",
+          headers: {
+            Authorization: `Bearer ${this.token}`
+          },
+          timeout: 5000
+        });
+
+        if (response.success) {
+          console.log("Captured user activity saved.");
+          return true;
+        } else {
+          throw new Error("Server response indicated failure.");
+        }
+      } catch (error) {
+        console.error(`Data submission attempt ${i + 1} failed:`, error);
+        if (error.status === 403) {
+          console.error("403 Forbidden: Check auth token or server CORS configuration.");
+          chrome.storage.local.remove('authToken', () => {
+            console.log("User session invalidated due to 403 error.");
+          });
+        }
+        if (i < retries - 1) await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+
+    console.error("All data submission attempts failed.");
+    await chrome.storage.local.set({ unsentData: data });
+    return false;
+  }
 };
 
+// Check for excluded domains
 const excludedDomains = /(facebook|twitter|localhost|chat\.openai|msgoba|35\.221\.213\.87|namecheap|^https?:\/\/(www\.)?google\.com)/i;
 
 if (excludedDomains.test(window.location.href)) {
-  // console.log("capture won't work here.");
-  saveCaptureData.getSearchQuery();
+    console.log("Capture won't work here.");
+    saveCaptureData.getSearchQuery();
 } else {
-  saveCaptureData.init();
+    saveCaptureData.init();
 }
 
 async function findMeaningfulParagraph(paragraphs) {
@@ -463,6 +451,5 @@ async function findMeaningfulParagraph(paragraphs) {
       return trimmedText;
     }
   }
-  // Return null if no meaningful paragraph is found
   return null;
 }

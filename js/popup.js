@@ -9,13 +9,16 @@ const displaySearchResults = (el, docs) => {
             if (urlMap.has(doc.url)) {
                 // Update the interestWeight and aggregatedWeight properties of existing object
                 const existingDoc = urlMap.get(doc.url);
+                if (doc.page_saved || doc.printed_document || doc.bookarked) existingDoc.interestWeight += 1;
                 existingDoc.interestWeight += (0.281 * doc.total_copy + 0.002 * doc.total_active_time + 2.9778);
                 existingDoc.aggregatedWeight += (existingDoc.interestWeight + doc.score);
+                existingDoc.relevance_count += !isNaN(doc.relevance) ? doc.relevance : 0;
                 existingDoc.count++; // Increment the count for averaging later
             } else {
                 // If URL doesn't exist in the map, add it along with the object
                 doc.interestWeight = 0.281 * doc.total_copy + 0.002 * doc.total_active_time + 2.9778;
                 doc.aggregatedWeight = doc.interestWeight + doc.score;
+                doc.relevance_count = !isNaN(doc.relevance) ? doc.relevance : 0;
                 doc.count = 1; // Initialize count for averaging
                 urlMap.set(doc.url, doc);
             }
@@ -34,9 +37,11 @@ const displaySearchResults = (el, docs) => {
 
         // Sort the uniqueDocs array based on aggregatedWeight in descending order
         uniqueDocs.sort((a, b) => b.aggregatedWeight - a.aggregatedWeight);
+        // uniqueDocs.sort((a, b) => b.relevance_count - a.relevance_count);
 
         htmlString = `<div class="list-group">`;
         uniqueDocs.forEach(doc => {
+            console.log(doc.relevance_count);
             htmlString += `<div class="list-group-item list-group-item-action flex-column align-items-start" data-bs-toggle="tooltip" data-bs-html="true" title="${doc.leading_paragraph}">
                 <div class="d-flex w-100 justify-content-between">
                 <h5 class="mb-1">${doc.page_title}</h5>
@@ -47,6 +52,9 @@ const displaySearchResults = (el, docs) => {
                 </div>
                 <a href="${doc.url}" target="_blank">${doc.url}</a>
                 <small class="">${doc.leading_paragraph ? doc.leading_paragraph[0].substring(0, 100) + "..." : "Couldn't find any paragraphs with up to 100 characters"}</small>
+                <div class="d-flex justify-content-between mt-2">
+                    <span class="badge bg-primary">${doc.relevance_count} ${doc.relevance_count > 1 || doc.relevance_count == 0? 'people': 'person'} found this relevant</span>
+                </div>
             </div>`;
         });
         htmlString += `</div>`;
@@ -65,42 +73,42 @@ document.addEventListener('DOMContentLoaded', function () {
     const submitBtn = document.querySelector('.submit-btn');
     const submitBtn2 = document.querySelector('.submit-btn-2');
 
-    chrome.storage.local.get(['authToken'], function (result) {
-        const isAuthenticated = !!result.authToken;
+    // chrome.storage.local.get(['authToken'], function (result) {
+    //     const isAuthenticated = !!result.authToken;
 
-        if (isAuthenticated) {
-            // Hide login and signup tabs
-            loginTab.style.display = 'none';
-            signupTab.style.display = 'none';
+    //     if (isAuthenticated) {
+    //         // Hide login and signup tabs
+    //         loginTab.style.display = 'none';
+    //         signupTab.style.display = 'none';
 
-            // Show results, download data tabs, and logout button
-            resultsTab.style.display = 'block';
-            dataTab.style.display = 'block';
-            logoutButton.style.display = 'block';
-        } else {
-            // Show login and signup tabs
-            loginTab.style.display = 'block';
-            signupTab.style.display = 'block';
+    //         // Show results, download data tabs, and logout button
+    //         resultsTab.style.display = 'block';
+    //         dataTab.style.display = 'block';
+    //         logoutButton.style.display = 'block';
+    //     } else {
+    //         // Show login and signup tabs
+    //         loginTab.style.display = 'block';
+    //         signupTab.style.display = 'block';
 
-            // Hide results, download data tabs, and logout button
-            resultsTab.style.display = 'none';
-            dataTab.style.display = 'none';
-            logoutButton.style.display = 'none';
-        }
+    //         // Hide results, download data tabs, and logout button
+    //         resultsTab.style.display = 'none';
+    //         dataTab.style.display = 'none';
+    //         logoutButton.style.display = 'none';
+    //     }
 
-        // Logout functionality
-        logoutButton.addEventListener('click', () => {
-            chrome.storage.local.remove('authToken', () => {
-                console.log('Logged out successfully');
-                // Refresh the UI after logout
-                loginTab.style.display = 'block';
-                signupTab.style.display = 'block';
-                resultsTab.style.display = 'none';
-                dataTab.style.display = 'none';
-                logoutButton.style.display = 'none';
-            });
-        });
-    });
+    //     // Logout functionality
+    //     logoutButton.addEventListener('click', () => {
+    //         chrome.storage.local.remove('authToken', () => {
+    //             console.log('Logged out successfully');
+    //             // Refresh the UI after logout
+    //             loginTab.style.display = 'block';
+    //             signupTab.style.display = 'block';
+    //             resultsTab.style.display = 'none';
+    //             dataTab.style.display = 'none';
+    //             logoutButton.style.display = 'none';
+    //         });
+    //     });
+    // });
 
     let tabs = document.querySelectorAll('.nav-link');
 
@@ -109,6 +117,7 @@ document.addEventListener('DOMContentLoaded', function () {
     loginForm.addEventListener('submit', (evt) => {
         submitBtn.classList.add('loading');
         evt.preventDefault();
+        console.log(loginForm[0].value, loginForm[1].value)
         login(loginForm[0].value, loginForm[1].value);
 
     })
@@ -117,19 +126,23 @@ document.addEventListener('DOMContentLoaded', function () {
         evt.preventDefault();
         // Show spinner
         submitBtn2.classList.add('loading');
-        const formdata = new FormData();
-        formdata.append("name", signupForm[0].value);
-        formdata.append("email", signupForm[1].value);
-        formdata.append("password", signupForm[2].value);
-        formdata.append("password_confirmation", signupForm[3].value);
+        const data = {
+            name: signupForm[0].value,
+            email: signupForm[1].value,
+            password: signupForm[2].value,
+            password_confirmation: signupForm[3].value
+        };
 
         const requestOptions = {
             method: "POST",
-            body: formdata,
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data),
             redirect: "follow"
         };
 
-        fetch("http://localhost:8000/api/users", requestOptions)
+        fetch("http://feedback.sekimbi.com/api/auth/register", requestOptions)
             .then((response) => response.json())
             .then((result) => {
                 console.log(result);
@@ -154,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             // Send a request to the backend with the authToken
-            fetch('http://localhost:8000/api/export-data', {
+            fetch('http://feedback.sekimbi.com/api/export-data', {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${authToken}`,
@@ -223,17 +236,21 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     async function login(email, password) {
-        const url = 'http://localhost:8000/api/login'; // Replace with your actual login URL
+        const url = 'http://localhost:5000/api/auth/login'; // Replace with your actual login URL
 
-        const formdata = new FormData();
-        formdata.append("email", email);
-        formdata.append("password", password);
+        const data = {
+            email: email,
+            password: password
+        };
 
         try {
             // Send a POST request with the email and password
             const response = await fetch(url, {
                 method: 'POST',
-                body: formdata,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
             });
 
             // Check if the request was successful
@@ -247,6 +264,7 @@ document.addEventListener('DOMContentLoaded', function () {
             console.log(result);
             // Assuming the token is returned in the response
             const token = result.token;
+            console.log(token);
 
             chrome.storage.local.set({ authToken: token }, () => {
                 console.log('Value saved');
@@ -261,9 +279,13 @@ document.addEventListener('DOMContentLoaded', function () {
             console.log('Login successful, token stored in sessionStorage');
             document.querySelector('.message').innerHTML = `Login successful, Switch to results tab`
 
+            // switch to the "results" tab
+            resultsTab.click();
+
         } catch (error) {
             submitBtn.classList.remove('loading');
-            console.error('Error during login:', error);
+            console.error('Error during login:', error.message);
+            console.error('Details:', error);
         }
     }
 })
