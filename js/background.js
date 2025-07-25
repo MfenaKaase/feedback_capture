@@ -8,33 +8,43 @@ function bookmarkListener() {
     });
 }
 
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
+    .catch((error) => console.error('Error setting panel behavior:', error));
 
-
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-    if (request.type === 'save_data') {
-        const data = request.payload;
-
-        // Send data to the server using fetch or XMLHttpRequest
-        fetch('http://localhost:8000/api/implicit-feedback', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${data.token}`
-            },
-            body: JSON.stringify(data)
-        }).then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        }).then(data => {
-            console.log('Data successfully sent:', data);
-        }).catch(error => {
-            console.error('Error sending data:', error);
-        });
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.status === 'complete' && tab.url) {
+        const url = new URL(tab.url);
+        if (url.protocol === 'https:' || url.protocol === 'http:') {
+            chrome.sidePanel.setOptions({
+                tabId,
+                path: 'sidepanel.html',
+                enabled: true
+            })
+            // .then(() => {
+            //     chrome.sidePanel.open({ tabId });
+            // })
+            .catch((error) => console.error('Error opening side panel:', error));
+        } else {
+            chrome.sidePanel.setOptions({ tabId, enabled: false });
+        }
     }
 });
 
-
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type === 'new_search_results') {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          type: 'update_sidepanel',
+          data: request.data
+        }, (response) => {
+          console.log("Side panel update response:", response);
+          sendResponse({ status: "Side panel notified" });
+        });
+      }
+    });
+    return true; // Keep the message channel open for async response
+  }
+});
 
 bookmarkListener();

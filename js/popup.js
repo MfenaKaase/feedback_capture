@@ -1,3 +1,7 @@
+document.addEventListener('DOMContentLoaded', function () {
+    chrome.runtime.sendMessage({ popupOpened: true });
+});
+
 const displaySearchResults = (el, docs) => {
     let htmlString = '<p class="text-danger">No Results Found in Your Group!</p>';
     if (docs && docs.length > 0) {
@@ -9,7 +13,7 @@ const displaySearchResults = (el, docs) => {
             if (urlMap.has(doc.url)) {
                 // Update the interestWeight and aggregatedWeight properties of existing object
                 const existingDoc = urlMap.get(doc.url);
-                if (doc.page_saved || doc.printed_document || doc.bookarked) existingDoc.interestWeight += 1;
+                if (doc.page_saved || doc.printed_document || doc.bookmarked) existingDoc.interestWeight += 1;
                 existingDoc.interestWeight += (0.281 * doc.total_copy + 0.002 * doc.total_active_time + 2.9778);
                 existingDoc.aggregatedWeight += (existingDoc.interestWeight + doc.score);
                 existingDoc.relevance_count += !isNaN(doc.relevance) ? doc.relevance : 0;
@@ -37,12 +41,13 @@ const displaySearchResults = (el, docs) => {
 
         // Sort the uniqueDocs array based on aggregatedWeight in descending order
         uniqueDocs.sort((a, b) => b.aggregatedWeight - a.aggregatedWeight);
-        // uniqueDocs.sort((a, b) => b.relevance_count - a.relevance_count);
 
         htmlString = `<div class="list-group">`;
         uniqueDocs.forEach(doc => {
             console.log(doc.relevance_count);
-            htmlString += `<div class="list-group-item list-group-item-action flex-column align-items-start" data-bs-toggle="tooltip" data-bs-html="true" title="${doc.leading_paragraph}">
+            htmlString += `<div class="list-group-item list-group-item-action flex-column align-items-start" data-bs-toggle="tooltip" data-bs-html="true" title="${typeof doc.leading_paragraph === "string"
+                ? doc.leading_paragraph.substring(0, 100) + "..."
+                : "Couldn't find any paragraphs with up to 100 characters"}">
                 <div class="d-flex w-100 justify-content-between">
                 <h5 class="mb-1">${doc.page_title}</h5>
                 <span class="position-absolute top-0 start-10 translate-middle badge rounded-pill bg-danger">
@@ -51,10 +56,12 @@ const displaySearchResults = (el, docs) => {
                 </span>
                 </div>
                 <a href="${doc.url}" target="_blank">${doc.url}</a>
-                <small class="">${doc.leading_paragraph ? doc.leading_paragraph[0].substring(0, 100) + "..." : "Couldn't find any paragraphs with up to 100 characters"}</small>
+                <small class="">${typeof doc.leading_paragraph === "string"
+                    ? doc.leading_paragraph.substring(0, 100) + "..."
+                    : "Couldn't find any paragraphs with up to 100 characters"}</small>
                 <div class="d-flex justify-content-between mt-2">
-                    <span class="badge bg-primary">${doc.relevance_count} ${doc.relevance_count > 1 || doc.relevance_count == 0? 'people': 'person'} found this relevant</span>
-                </div>
+                    <span class="badge bg-primary">${doc.relevance_count} ${doc.relevance_count > 1 || doc.relevance_count == 0 ? 'people' : 'person'} found this relevant</span>
+                </div>i
             </div>`;
         });
         htmlString += `</div>`;
@@ -62,240 +69,133 @@ const displaySearchResults = (el, docs) => {
     el.innerHTML = htmlString;
 }
 
-
 document.addEventListener('DOMContentLoaded', function () {
-    const loginTab = document.querySelector('button[data-bs-target="#profile-settings"]');
-    const signupTab = document.querySelector('button[data-bs-target="#profile-edit"]');
-    const resultsTab = document.querySelector('button[data-bs-target="#profile-overview"]');
-    const dataTab = document.querySelector('button[data-bs-target="#download-options"]');
-    const logoutButton = document.getElementById('logoutButton');
-    const signupForm = document.getElementById('signup-form')
-    const submitBtn = document.querySelector('.submit-btn');
-    const submitBtn2 = document.querySelector('.submit-btn-2');
-
-    // chrome.storage.local.get(['authToken'], function (result) {
-    //     const isAuthenticated = !!result.authToken;
-
-    //     if (isAuthenticated) {
-    //         // Hide login and signup tabs
-    //         loginTab.style.display = 'none';
-    //         signupTab.style.display = 'none';
-
-    //         // Show results, download data tabs, and logout button
-    //         resultsTab.style.display = 'block';
-    //         dataTab.style.display = 'block';
-    //         logoutButton.style.display = 'block';
-    //     } else {
-    //         // Show login and signup tabs
-    //         loginTab.style.display = 'block';
-    //         signupTab.style.display = 'block';
-
-    //         // Hide results, download data tabs, and logout button
-    //         resultsTab.style.display = 'none';
-    //         dataTab.style.display = 'none';
-    //         logoutButton.style.display = 'none';
-    //     }
-
-    //     // Logout functionality
-    //     logoutButton.addEventListener('click', () => {
-    //         chrome.storage.local.remove('authToken', () => {
-    //             console.log('Logged out successfully');
-    //             // Refresh the UI after logout
-    //             loginTab.style.display = 'block';
-    //             signupTab.style.display = 'block';
-    //             resultsTab.style.display = 'none';
-    //             dataTab.style.display = 'none';
-    //             logoutButton.style.display = 'none';
-    //         });
-    //     });
-    // });
-
+    const searchForm = document.getElementById('signup-form');
+    console.log("search form", searchForm);
     let tabs = document.querySelectorAll('.nav-link');
-
-    const loginForm = document.getElementById('login-form');
-
-    loginForm.addEventListener('submit', (evt) => {
-        submitBtn.classList.add('loading');
-        evt.preventDefault();
-        console.log(loginForm[0].value, loginForm[1].value)
-        login(loginForm[0].value, loginForm[1].value);
-
-    })
-
-    signupForm.addEventListener('submit', evt => {
-        evt.preventDefault();
-        // Show spinner
-        submitBtn2.classList.add('loading');
-        const data = {
-            name: signupForm[0].value,
-            email: signupForm[1].value,
-            password: signupForm[2].value,
-            password_confirmation: signupForm[3].value
-        };
-
-        const requestOptions = {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(data),
-            redirect: "follow"
-        };
-
-        fetch("http://feedback.sekimbi.com/api/auth/register", requestOptions)
-            .then((response) => response.json())
-            .then((result) => {
-                console.log(result);
-                submitBtn2.classList.remove('loading');
-            })
-            .catch((error) => {
-                console.error(error);
-                submitBtn2.classList.remove('loading');
-            });
-    })
-
-    // download data 
-    document.getElementById('downloadButton').addEventListener('click', () => {
-        // Retrieve the authToken from chrome.storage.local
-        chrome.storage.local.get(['authToken'], (result) => {
-            const authToken = result.authToken;
-
-            // Ensure the authToken exists
-            if (!authToken) {
-                console.error('Auth token not found.');
-                return;
-            }
-
-            // Send a request to the backend with the authToken
-            fetch('http://feedback.sekimbi.com/api/export-data', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${authToken}`,
-                    "Content-Type": "application/json"
-                }
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.blob(); // Parse the response as a blob (binary data)
-                })
-                .then(blob => {
-                    // Create a URL for the blob
-                    const downloadUrl = URL.createObjectURL(blob);
-
-                    // Create an invisible anchor element and trigger the download
-                    const anchor = document.createElement('a');
-                    anchor.href = downloadUrl;
-                    anchor.download = 'data.csv'; // Filename for the download
-                    document.body.appendChild(anchor);
-                    anchor.click();
-
-                    // Cleanup
-                    document.body.removeChild(anchor);
-                    URL.revokeObjectURL(downloadUrl); // Revoke the object URL to free up memory
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-        });
-    });
-
 
     tabs.forEach(function (tab) {
         tab.addEventListener('click', function () {
             let target = tab.getAttribute('data-bs-target');
-
-            // Remove active class from all tabs
             tabs.forEach(function (t) {
                 t.classList.remove('active');
             });
-
-            // Add active class to the clicked tab
             tab.classList.add('active');
-
-            // Hide all tab content
             let tabContents = document.querySelectorAll('.tab-pane');
             tabContents.forEach(function (content) {
                 content.classList.remove('show', 'active');
             });
-
-            // Show the corresponding tab content
             document.querySelector(target).classList.add('show', 'active');
         });
+    });
+
+
+    const searchInput = document.getElementById('search-input');
+    let debounceTimeout;
+
+    searchInput.addEventListener('input', function () {
+        clearTimeout(debounceTimeout);
+        debounceTimeout = setTimeout(async () => {
+            const query = searchInput.value.trim();
+            const container = document.getElementById('searchResultsContainer');
+            if (!query) {
+                document.getElementById('searchResultsContainer').innerHTML = '<p class="text-danger">Please enter a search query</p>';
+                return;
+            }
+            // Show spinner in container
+            container.innerHTML = `
+            <div class="d-flex justify-content-center align-items-center" style="height: 60px;">
+                <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+            </div>
+        `;
+            searchButton.disabled = true;
+            try {
+                // const myHeaders = new Headers();
+                // myHeaders.append('Authorization', `Bearer ${authToken}`);
+                const response = await fetch(`https://feedback.sekimbi.com/api/implicit-feedback?query=${encodeURIComponent(query)}`, {
+                    method: 'GET',
+                    // headers: myHeaders,
+                    redirect: 'follow'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const results = await response.json();
+                console.log('Search results:', results);
+                
+                displaySearchResults(container, results.response?.docs || []);
+            } catch (error) {
+                console.error('Error fetching search results:', error);
+                document.getElementById('searchResultsContainer').innerHTML = '<p class="text-danger">Error fetching results. Please try again.</p>';
+            } finally {
+                searchButton.classList.remove('loading');
+                searchButton.disabled = false;
+            }
+        }, 400); // 400ms debounce
+    });
+    // Handle search form submission
+    // if (searchForm) {
+    //     searchForm.addEventListener('submit', async (evt) => {
+    //         evt.preventDefault();
+    //         const searchInput = document.getElementById('search-input');
+    //         const query = searchInput.value.trim();
+    //         if (!query) {
+    //             document.getElementById('searchResultsContainer').innerHTML = '<p class="text-danger">Please enter a search query</p>';
+    //             return;
+    //         }
+
+    //         chrome.storage.local.get(['authToken'], async (result) => {
+    //             searchButton.classList.add('loading');
+    //             searchButton.disabled = true;
+
+    //             try {
+    //                 // const myHeaders = new Headers();
+    //                 // myHeaders.append('Authorization', `Bearer ${authToken}`);
+    //                 const response = await fetch(`https://feedback.sekimbi.com/api/implicit-feedback?query=${encodeURIComponent(query)}`, {
+    //                     method: 'GET',
+    //                     // headers: myHeaders,
+    //                     redirect: 'follow'
+    //                 });
+
+    //                 if (!response.ok) {
+    //                     throw new Error(`HTTP error! Status: ${response.status}`);
+    //                 }
+
+    //                 const results = await response.json();
+    //                 console.log('Search results:', results);
+    //                 const container = document.getElementById('searchResultsContainer');
+    //                 displaySearchResults(container, results.response?.docs || []);
+    //             } catch (error) {
+    //                 console.error('Error fetching search results:', error);
+    //                 document.getElementById('searchResultsContainer').innerHTML = '<p class="text-danger">Error fetching results. Please try again.</p>';
+    //             } finally {
+    //                 searchButton.classList.remove('loading');
+    //                 searchButton.disabled = false;
+    //             }
+    //         });
+    //     });
+    // }
+
+    // Listen for side panel updates
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        if (request.type === 'update_sidepanel') {
+            console.log("Received new search results for side panel:", request.data);
+            const container = document.getElementById('feedbackResultsContainer');
+            displaySearchResults(container, request.data.docs || []);
+            sendResponse({ status: "Side panel updated" });
+        }
+        return true;
     });
 
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         chrome.tabs.sendMessage(tabs[0].id, { type: "msg_from_popup" }, function (response) {
             const container = document.getElementById('feedbackResultsContainer');
-            console.log(response)
+            console.log(response);
             if (response) displaySearchResults(container, response.docs);
-            else container.innerHTML = "<p class='text-danger'>An error has occured! Check your internet connection!</p>"
-
+            else container.innerHTML = "<p class='text-danger'>An error has occurred! Check your internet connection!</p>";
         });
     });
 
-    async function login(email, password) {
-        const url = 'http://localhost:5000/api/auth/login'; // Replace with your actual login URL
-
-        const data = {
-            email: email,
-            password: password
-        };
-
-        try {
-            // Send a POST request with the email and password
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
-
-            // Check if the request was successful
-            if (!response.ok) {
-                throw new Error('Login failed');
-            }
-
-            // Parse the JSON response
-            const result = await response.json();
-
-            console.log(result);
-            // Assuming the token is returned in the response
-            const token = result.token;
-            console.log(token);
-
-            chrome.storage.local.set({ authToken: token }, () => {
-                console.log('Value saved');
-            });
-
-            loginTab.style.display = 'none';
-            signupTab.style.display = 'none';
-            resultsTab.style.display = 'block';
-            dataTab.style.display = 'block';
-            logoutButton.style.display = 'block';
-            submitBtn.classList.remove('loading');
-            console.log('Login successful, token stored in sessionStorage');
-            document.querySelector('.message').innerHTML = `Login successful, Switch to results tab`
-
-            // switch to the "results" tab
-            resultsTab.click();
-
-        } catch (error) {
-            submitBtn.classList.remove('loading');
-            console.error('Error during login:', error.message);
-            console.error('Details:', error);
-        }
-    }
-})
-
-
-
-
-
-
-
-
-
-
+});

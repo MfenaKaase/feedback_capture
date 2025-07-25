@@ -1,4 +1,29 @@
 let search_results = {};
+// Add to the top of content.js
+let lastKnownUrl = window.location.href;
+
+// Function to check for URL changes
+function monitorUrlChanges() {
+  setInterval(() => {
+    if (window.location.href !== lastKnownUrl) {
+      console.log("URL changed from", lastKnownUrl, "to", window.location.href);
+      lastKnownUrl = window.location.href;
+      saveCaptureData.getSearchQuery(); // Fetch new search results
+      notifySidePanel(); // Notify side panel of new results
+    }
+  }, 1000); // Check every second
+}
+
+// Function to notify side panel of new search results
+function notifySidePanel() {
+  chrome.runtime.sendMessage({
+    type: "new_search_results",
+    data: search_results
+  }, (response) => {
+    console.log("Side panel notified:", response);
+  });
+}
+
 
 // URL handler
 function getUrlVars(href) {
@@ -11,16 +36,6 @@ function getUrlVars(href) {
   }
   return vars;
 
-
-
-
-
-
-
-
-
-
-    
 }
 
 chrome.runtime.onMessage.addListener(
@@ -128,7 +143,7 @@ var saveCaptureData = {
         myHeaders.append('Authorization', `Bearer ${authToken}`);
       }
 
-      fetch(`https://feedback.sekimbi.com/api/implicit-feedback?query=${encodeURIComponent(query)}`, {
+      fetch(`https://feedback.sekimbi.com/api/implicit-feedback?query=${encodeURIComponent(r)}`, {
         method: 'GET',
         headers: myHeaders,
         redirect: 'follow'
@@ -141,7 +156,8 @@ var saveCaptureData = {
         .then(results => {
           console.log('Parsed JSON:', results);
           search_results = results.response || {};
-          console.log('Search results:', search_results);
+          console.log('Search results updated:', search_results);
+          notifySidePanel(); // Notify side panel after updating search_results
         })
         .catch(error => {
           console.error('Error fetching search results:', error);
@@ -437,11 +453,13 @@ var saveCaptureData = {
 // Check for excluded domains
 const excludedDomains = /(facebook|twitter|localhost|chat\.openai|msgoba|35\.221\.213\.87|namecheap|^https?:\/\/(www\.)?google\.com)/i;
 
-if (excludedDomains.test(window.location.href)) {
-    console.log("Capture won't work here.");
-    saveCaptureData.getSearchQuery();
+// Call monitorUrlChanges when initializing
+if (!excludedDomains.test(window.location.href)) {
+  saveCaptureData.init();
+  monitorUrlChanges(); // Start monitoring URL changes
 } else {
-    saveCaptureData.init();
+  saveCaptureData.getSearchQuery();
+  monitorUrlChanges(); // Monitor even on excluded domains for search queries
 }
 
 async function findMeaningfulParagraph(paragraphs) {
