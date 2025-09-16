@@ -134,6 +134,11 @@ var saveCaptureData = {
     let query = String(getUrlVars(lastUrl).q || "");
     let r = query.split('+').join(' ');
 
+    if (!r) {
+      console.log("No search query found in URL, skipping search request.");
+      return;
+    }
+
     chrome.storage.local.get(['authToken'], function (result) {
       let authToken = result.authToken || "";
       console.log("Auth token for search query:", authToken);
@@ -143,7 +148,7 @@ var saveCaptureData = {
         myHeaders.append('Authorization', `Bearer ${authToken}`);
       }
 
-      fetch(`https://feedback.sekimbi.com/api/implicit-feedback?query=${encodeURIComponent(r)}`, {
+      fetch(`http://localhost:5000/api/implicit-feedback?query=${encodeURIComponent(r)}`, {
         method: 'GET',
         headers: myHeaders,
         redirect: 'follow'
@@ -201,31 +206,26 @@ var saveCaptureData = {
   },
 
   setCloseEvent: function () {
-    window.addEventListener("beforeunload", async function (e) {
+    //Window close listener
+    window.addEventListener("beforeunload", function (e) {
+      // If you prevent default behavior in Mozilla Firefox prompt will always be shown
       e.preventDefault();
-      saveCaptureData.stopTimeCount();
-      saveCaptureData.closeTimeStamp = Math.floor(Date.now() / 1000);
-      saveCaptureData.user_rating = 1;
+      // Chrome requires returnValue to be set
 
-      try {
-        const success = await saveCaptureData.save();
-        if (!success) {
-          console.error("Data submission failed, triggering popup.");
-          await new Promise((resolve) => {
-            chrome.runtime.sendMessage(
-              { type: 'show_popup', data: saveCaptureData.getData() },
-              (response) => {
-                console.log("Popup message response:", response);
-                resolve();
-              }
-            );
-          });
-        }
-      } catch (error) {
-        console.error("Error in beforeunload handler:", error);
-      }
+      var dt = Date.now();
+      var d = new Date();
+      saveCaptureData.closeTimeStamp = Math.floor(d.getTime() / 1000);
+      // console.log("The time at closing is: " + saveCaptureData.closeTimeStamp);
+
+      // if ((saveCaptureData.loadedTime > 0 || dt >= 1000) && saveCaptureData.search_query) {
+      //   // save here as null (don't have to save because it's default)
+
+      // }
+
+      saveCaptureData.user_rating = 1;
+      saveCaptureData.save();
       e.returnValue = "";
-    }, { capture: true });
+    });
   },
 
   monitorKeyPress: function () {
@@ -316,7 +316,7 @@ var saveCaptureData = {
         return;
       }
       this.token = result.authToken;
-      fetch("https://feedback.sekimbi.com/api/auth/user", {
+      fetch("http://localhost:5000/api/auth/user", {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${result.authToken}`,
@@ -404,51 +404,25 @@ var saveCaptureData = {
 
   save: async function (retries = 3, delay = 1000) {
     const data = this.getData();
-    console.log("Saving data:", data);
+    console.log("Preparing to save data:", data);
 
-    for (let i = 0; i < retries; i++) {
-      try {
-        if (!navigator.onLine) {
-          console.error("No network connection for data submission.");
-          await chrome.storage.local.set({ unsentData: data });
-          return false;
-        }
-
-        const response = await $.ajax({
-          type: "POST",
-          url: "https://feedback.sekimbi.com/api/implicit-feedback",
-          dataType: "json",
-          data: JSON.stringify(data),
-          contentType: "application/json",
-          headers: {
-            Authorization: `Bearer ${this.token}`
-          },
-          timeout: 5000
+    // Send to background script for actual network request
+    chrome.runtime.sendMessage({ type: 'save_data', payload: data }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error("Error sending to background:", chrome.runtime.lastError);
+        // Fallback: Store unsent data locally to retry later (e.g., on extension load)
+        chrome.storage.local.set({ unsentData: data }, () => {
+          console.log("Unsent data stored locally for later retry.");
         });
-
-        if (response.success) {
-          console.log("Captured user activity saved.");
-          return true;
-        } else {
-          throw new Error("Server response indicated failure.");
-        }
-      } catch (error) {
-        console.error(`Data submission attempt ${i + 1} failed:`, error);
-        if (error.status === 403) {
-          console.error("403 Forbidden: Check auth token or server CORS configuration.");
-          chrome.storage.local.remove('authToken', () => {
-            console.log("User session invalidated due to 403 error.");
-          });
-        }
-        if (i < retries - 1) await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        console.log("Data sent to background for saving:", response);
       }
-    }
-
-    console.error("All data submission attempts failed.");
-    await chrome.storage.local.set({ unsentData: data });
-    return false;
+    });
   }
+
 };
+
+
 
 // Check for excluded domains
 const excludedDomains = /(facebook|twitter|localhost|chat\.openai|msgoba|35\.221\.213\.87|namecheap|^https?:\/\/(www\.)?google\.com)/i;

@@ -99,20 +99,21 @@ document.addEventListener('DOMContentLoaded', function () {
             const query = searchInput.value.trim();
             const container = document.getElementById('searchResultsContainer');
             if (!query) {
-                document.getElementById('searchResultsContainer').innerHTML = '<p class="text-danger">Please enter a search query</p>';
+                container.innerHTML = '<p class="text-danger">Please enter a search query</p>';
                 return;
             }
             // Show spinner in container
             container.innerHTML = `
             <div class="d-flex justify-content-center align-items-center" style="height: 60px;">
+                Loading ...
                 <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
             </div>
         `;
-            searchButton.disabled = true;
+            // searchButton.disabled = true;
             try {
                 // const myHeaders = new Headers();
                 // myHeaders.append('Authorization', `Bearer ${authToken}`);
-                const response = await fetch(`https://feedback.sekimbi.com/api/implicit-feedback?query=${encodeURIComponent(query)}`, {
+                const response = await fetch(`http://localhost:5000/api/implicit-feedback?query=${encodeURIComponent(query)}`, {
                     method: 'GET',
                     // headers: myHeaders,
                     redirect: 'follow'
@@ -130,8 +131,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.error('Error fetching search results:', error);
                 document.getElementById('searchResultsContainer').innerHTML = '<p class="text-danger">Error fetching results. Please try again.</p>';
             } finally {
-                searchButton.classList.remove('loading');
-                searchButton.disabled = false;
+                // searchButton.classList.remove('loading');
+                // searchButton.disabled = false;
             }
         }, 400); // 400ms debounce
     });
@@ -153,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function () {
     //             try {
     //                 // const myHeaders = new Headers();
     //                 // myHeaders.append('Authorization', `Bearer ${authToken}`);
-    //                 const response = await fetch(`https://feedback.sekimbi.com/api/implicit-feedback?query=${encodeURIComponent(query)}`, {
+    //                 const response = await fetch(`https://localhost/api/implicit-feedback?query=${encodeURIComponent(query)}`, {
     //                     method: 'GET',
     //                     // headers: myHeaders,
     //                     redirect: 'follow'
@@ -166,8 +167,7 @@ document.addEventListener('DOMContentLoaded', function () {
     //                 const results = await response.json();
     //                 console.log('Search results:', results);
     //                 const container = document.getElementById('searchResultsContainer');
-    //                 displaySearchResults(container, results.response?.docs || []);
-    //             } catch (error) {
+    //                 displaySearchResults(container, results.response?.docs || []);    //             } catch (error) {
     //                 console.error('Error fetching search results:', error);
     //                 document.getElementById('searchResultsContainer').innerHTML = '<p class="text-danger">Error fetching results. Please try again.</p>';
     //             } finally {
