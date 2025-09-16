@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function () {
             try {
                 // const myHeaders = new Headers();
                 // myHeaders.append('Authorization', `Bearer ${authToken}`);
-                const response = await fetch(`http://localhost:5000/api/implicit-feedback?query=${encodeURIComponent(query)}`, {
+                const response = await fetch(`https://feedback.sekimbi.com/api/implicit-feedback?query=${encodeURIComponent(query)}`, {
                     method: 'GET',
                     // headers: myHeaders,
                     redirect: 'follow'

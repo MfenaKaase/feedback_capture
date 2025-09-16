@@ -6,7 +6,7 @@
   "action": {
     "default_title": "Implicit Feedback Capture"
   },
-  "permissions": ["sidePanel", "activeTab", "storage", "bookmarks", "tabs", "scripting", "http://localhost/*"],
+  "permissions": ["sidePanel", "activeTab", "storage", "bookmarks", "tabs", "scripting", "https://feedback.sekimbi.com/*"],
    "side_panel": {
     "default_path": "sidepanel.html"
   },

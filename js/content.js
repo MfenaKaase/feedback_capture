@@ -148,7 +148,7 @@ var saveCaptureData = {
         myHeaders.append('Authorization', `Bearer ${authToken}`);
       }
 
-      fetch(`http://localhost:5000/api/implicit-feedback?query=${encodeURIComponent(r)}`, {
+      fetch(`https://feedback.sekimbi.com/api/implicit-feedback?query=${encodeURIComponent(r)}`, {
         method: 'GET',
         headers: myHeaders,
         redirect: 'follow'
@@ -208,20 +208,14 @@ var saveCaptureData = {
   setCloseEvent: function () {
     //Window close listener
     window.addEventListener("beforeunload", function (e) {
-      // If you prevent default behavior in Mozilla Firefox prompt will always be shown
+      // prevent default behavior
       e.preventDefault();
       // Chrome requires returnValue to be set
 
       var dt = Date.now();
       var d = new Date();
       saveCaptureData.closeTimeStamp = Math.floor(d.getTime() / 1000);
-      // console.log("The time at closing is: " + saveCaptureData.closeTimeStamp);
-
-      // if ((saveCaptureData.loadedTime > 0 || dt >= 1000) && saveCaptureData.search_query) {
-      //   // save here as null (don't have to save because it's default)
-
-      // }
-
+      
       saveCaptureData.user_rating = 1;
       saveCaptureData.save();
       e.returnValue = "";
@@ -316,7 +310,7 @@ var saveCaptureData = {
         return;
       }
       this.token = result.authToken;
-      fetch("http://localhost:5000/api/auth/user", {
+      fetch("https://feedback.sekimbi.com/api/auth/user", {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${result.authToken}`,
